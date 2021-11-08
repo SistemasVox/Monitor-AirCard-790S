@@ -8,8 +8,7 @@ import java.util.ArrayList;
 
 public class Download {
 	static ArrayList<String> listadeStrings = new ArrayList<>();
-
-	public static void main(String[] args) {		
+	public static void main(String[] args) {
 		new Thread(new Runnable() {
 			@Override
 			public void run() {
@@ -22,7 +21,7 @@ public class Download {
 					}
 				} while (true);
 			}
-		}).start();		
+		}).start();
 	}
 
 	private static void download() {
@@ -35,7 +34,7 @@ public class Download {
 			escrever();
 		} catch (Exception e) {
 			System.out.println(e.getMessage());
-		}		
+		}
 	}
 
 	private static void escrever() {
@@ -55,7 +54,5 @@ public class Download {
 		} catch (Exception e) {
 			System.out.println(e.getMessage());
 		}
-		
 	}
-
 }

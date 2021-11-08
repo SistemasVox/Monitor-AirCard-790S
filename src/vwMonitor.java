@@ -35,7 +35,6 @@ public class vwMonitor extends JFrame {
 	private static JTextField txt4;
 	private static JTextField txt5;
 	private static ArrayList<JTextField> jt = new ArrayList<>();
-	// private static ArrayList<JTextField> ping = new ArrayList<>();
 	private static ArrayList<String> listadeStrings = new ArrayList<>();
 	private JTextField txtTime;
 	private boolean continuar = true, continuar_ping = true;
@@ -128,7 +127,6 @@ public class vwMonitor extends JFrame {
 		lblT1.setFont(new Font("Tahoma", Font.BOLD, 14));
 		lblT1.setBounds(265, 64, 36, 14);
 		contentPane.add(lblT1);
-
 		lblT2 = new JLabel("x");
 		lblT2.setVerticalAlignment(SwingConstants.BOTTOM);
 		lblT2.setHorizontalAlignment(SwingConstants.LEFT);
@@ -237,7 +235,6 @@ public class vwMonitor extends JFrame {
 		txtArea.setEditable(false);
 		txtArea.setBounds(96, 203, 250, 22);
 		contentPane.add(txtArea);
-
 		JLabel lblg = new JLabel("GoogleBR:");
 		lblg.addMouseListener(new MouseAdapter() {
 			@Override
@@ -253,9 +250,7 @@ public class vwMonitor extends JFrame {
 		lblg.setFont(new Font("Tahoma", Font.BOLD, 12));
 		lblg.setBounds(273, 39, 79, 14);
 		contentPane.add(lblg);
-
 		ping0 = new JTextField();
-		// ping.add(ping0);
 		ping0.setText("00");
 		ping0.setHorizontalAlignment(SwingConstants.CENTER);
 		ping0.setFont(new Font("Tahoma", Font.BOLD, 14));
@@ -263,15 +258,12 @@ public class vwMonitor extends JFrame {
 		ping0.setColumns(10);
 		ping0.setBounds(353, 37, 86, 20);
 		contentPane.add(ping0);
-
 		JLabel lblmin = new JLabel("Min:");
 		lblmin.setHorizontalAlignment(SwingConstants.RIGHT);
 		lblmin.setFont(new Font("Tahoma", Font.BOLD, 12));
 		lblmin.setBounds(316, 64, 36, 14);
 		contentPane.add(lblmin);
-
 		ping1 = new JTextField();
-		// ping.add(ping1);
 		ping1.setText("00");
 		ping1.setHorizontalAlignment(SwingConstants.CENTER);
 		ping1.setFont(new Font("Tahoma", Font.BOLD, 14));
@@ -279,15 +271,12 @@ public class vwMonitor extends JFrame {
 		ping1.setColumns(10);
 		ping1.setBounds(353, 62, 86, 20);
 		contentPane.add(ping1);
-
 		JLabel lblmed = new JLabel("Med:");
 		lblmed.setHorizontalAlignment(SwingConstants.RIGHT);
 		lblmed.setFont(new Font("Tahoma", Font.BOLD, 12));
 		lblmed.setBounds(316, 89, 36, 14);
 		contentPane.add(lblmed);
-
 		ping2 = new JTextField();
-		// ping.add(ping2);
 		ping2.setText("00");
 		ping2.setHorizontalAlignment(SwingConstants.CENTER);
 		ping2.setFont(new Font("Tahoma", Font.BOLD, 14));
@@ -295,7 +284,6 @@ public class vwMonitor extends JFrame {
 		ping2.setColumns(10);
 		ping2.setBounds(353, 87, 86, 20);
 		contentPane.add(ping2);
-
 		JButton btnNewButton = new JButton("Ping");
 		btnNewButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
@@ -317,9 +305,7 @@ public class vwMonitor extends JFrame {
 		});
 		btnNewButton.setBounds(254, 228, 89, 23);
 		contentPane.add(btnNewButton);
-
 		ping3 = new JTextField();
-		// ping.add(ping3);
 		ping3.setText("00");
 		ping3.setHorizontalAlignment(SwingConstants.CENTER);
 		ping3.setFont(new Font("Tahoma", Font.BOLD, 14));
@@ -327,13 +313,11 @@ public class vwMonitor extends JFrame {
 		ping3.setColumns(10);
 		ping3.setBounds(353, 112, 86, 20);
 		contentPane.add(ping3);
-
 		JLabel lblmax = new JLabel("Max:");
 		lblmax.setHorizontalAlignment(SwingConstants.RIGHT);
 		lblmax.setFont(new Font("Tahoma", Font.BOLD, 12));
 		lblmax.setBounds(316, 114, 36, 14);
 		contentPane.add(lblmax);
-
 	}
 
 	private static void download() {
@@ -371,14 +355,10 @@ public class vwMonitor extends JFrame {
 				String[] st = listadeStrings.get(i).split(":");
 				if (i == 40 || i == 44) {
 					jt.get(i - 39).setText(st[1].trim().replaceAll("[^0-9]+", "") + "°");
-
 					if (i == 40) {
 						if (!temp1.equals(st[1].trim().replaceAll("[^0-9]+", ""))) {
 							if (Integer.parseInt(st[1].trim().replaceAll("[^0-9]+", "")) > Integer.parseInt(temp1)) {
 								lblT1.setText("+");
-								// R=255
-								// G=0
-								// B=0
 								Color color = new Color(255, 0, 0);
 								txt1.setForeground(color);
 								audio_Play("classic notify");
@@ -387,7 +367,6 @@ public class vwMonitor extends JFrame {
 								txt1.setForeground(new Color(0, 0, 255));
 							}
 							temp1 = st[1].trim().replaceAll("[^0-9]+", "");
-
 						}
 					}
 					if (i == 44) {
@@ -402,12 +381,10 @@ public class vwMonitor extends JFrame {
 							}
 							temp2 = st[1].trim().replaceAll("[^0-9]+", "");
 						}
-
 						if (Integer.parseInt(temp2) > 40 || Integer.parseInt(temp1) > 43) {
 							audio_Play("Windows XP Shutdown");
 						}
 					}
-
 				} else {
 					jt.get(i - 39).setText(st[1].trim());
 				}
@@ -438,13 +415,11 @@ public class vwMonitor extends JFrame {
 		commands.add("-l");
 		commands.add("756");
 		commands.add("google.com.br");
-
 		google(commands);
 	}
 
 	private void google(List<String> commands) throws IOException {
 		s = "";
-
 		ProcessBuilder pb = new ProcessBuilder(commands);
 		process = pb.start();
 		BufferedReader stdInput = new BufferedReader(new InputStreamReader(process.getInputStream()));
@@ -461,7 +436,6 @@ public class vwMonitor extends JFrame {
 				zerar_ping();
 			}
 		}
-
 	}
 
 	private void minMedMax(String ms2) {
