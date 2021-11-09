@@ -15,7 +15,9 @@ import java.io.InputStreamReader;
 import java.net.URL;
 import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.awt.event.ActionEvent;
 import java.awt.Font;
@@ -24,6 +26,7 @@ import javax.swing.JTextArea;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.Color;
+import javax.swing.JRadioButton;
 
 @SuppressWarnings("serial")
 public class vwMonitor extends JFrame {
@@ -45,6 +48,8 @@ public class vwMonitor extends JFrame {
 	private JTextField ping2;
 	private JTextField ping3;
 	private Process process;
+	private JLabel lblHora;
+	private static JRadioButton rdSom;
 	private static JLabel lblT1;
 	private static JLabel lblT2;
 	private static int min = 990, med = 0, max = 0, c_s = 0;
@@ -318,6 +323,18 @@ public class vwMonitor extends JFrame {
 		lblmax.setFont(new Font("Tahoma", Font.BOLD, 12));
 		lblmax.setBounds(316, 114, 36, 14);
 		contentPane.add(lblmax);
+		
+		lblHora = new JLabel("New label");
+		lblHora.setHorizontalAlignment(SwingConstants.RIGHT);
+		lblHora.setFont(new Font("Tahoma", Font.BOLD, 14));
+		lblHora.setText(new SimpleDateFormat("hh:mm:ss").format(new Date()));
+		lblHora.setBounds(330, 137, 105, 14);
+		contentPane.add(lblHora);
+		
+		rdSom = new JRadioButton("Som ON");
+		rdSom.setHorizontalAlignment(SwingConstants.RIGHT);
+		rdSom.setBounds(356, 175, 86, 23);
+		contentPane.add(rdSom);
 	}
 
 	private static void download() {
@@ -381,7 +398,8 @@ public class vwMonitor extends JFrame {
 							}
 							temp2 = st[1].trim().replaceAll("[^0-9]+", "");
 						}
-						if (Integer.parseInt(temp2) > 40 || Integer.parseInt(temp1) > 43) {
+						if (Integer.parseInt(temp2) > 40 || Integer.parseInt(temp1) > 44) {
+							rdSom.setSelected(true);
 							audio_Play("Windows XP Shutdown");
 						}
 					}
@@ -396,8 +414,10 @@ public class vwMonitor extends JFrame {
 	}
 
 	private static void audio_Play(String nome) {
-		File f = new File("sons/" + nome + ".wav");
-		new AePlayWave(f.getAbsolutePath()).start();
+		if (rdSom.isSelected()) {
+			File f = new File("sons/" + nome + ".wav");
+			new AePlayWave(f.getAbsolutePath()).start();
+		}
 	}
 
 	private String pontos(int contagem) {
@@ -466,5 +486,6 @@ public class vwMonitor extends JFrame {
 		ping1.setText("--");
 		ping2.setText("--");
 		ping3.setText("--");
+		lblHora.setText(new SimpleDateFormat("hh:mm:ss").format(new Date()));
 	}
 }
