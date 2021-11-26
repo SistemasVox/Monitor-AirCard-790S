@@ -52,8 +52,9 @@ public class vwMonitor extends JFrame {
 	private static JRadioButton rdSom;
 	private static JLabel lblT1;
 	private static JLabel lblT2;
+	private static JLabel lblBat;
 	private static int min = 990, med = 0, max = 0, c_s = 0;
-	private static String s, ms, temp1 = "99", temp2 = "99";
+	private static String s, ms, temp1 = "99", temp2 = "99", bat = "100";
 
 	public static void main(String[] args) {
 		EventQueue.invokeLater(new Runnable() {
@@ -323,18 +324,22 @@ public class vwMonitor extends JFrame {
 		lblmax.setFont(new Font("Tahoma", Font.BOLD, 12));
 		lblmax.setBounds(316, 114, 36, 14);
 		contentPane.add(lblmax);
-		
 		lblHora = new JLabel("New label");
 		lblHora.setHorizontalAlignment(SwingConstants.RIGHT);
 		lblHora.setFont(new Font("Tahoma", Font.BOLD, 14));
 		lblHora.setText(new SimpleDateFormat("hh:mm:ss").format(new Date()));
 		lblHora.setBounds(330, 137, 105, 14);
 		contentPane.add(lblHora);
-		
 		rdSom = new JRadioButton("Som ON");
 		rdSom.setHorizontalAlignment(SwingConstants.RIGHT);
 		rdSom.setBounds(356, 175, 86, 23);
 		contentPane.add(rdSom);
+		lblBat = new JLabel("");
+		lblBat.setVerticalAlignment(SwingConstants.BOTTOM);
+		lblBat.setHorizontalAlignment(SwingConstants.LEFT);
+		lblBat.setFont(new Font("Tahoma", Font.BOLD, 14));
+		lblBat.setBounds(265, 114, 36, 14);
+		contentPane.add(lblBat);
 	}
 
 	private static void download() {
@@ -374,37 +379,42 @@ public class vwMonitor extends JFrame {
 					jt.get(i - 39).setText(st[1].trim().replaceAll("[^0-9]+", "") + "°");
 					if (i == 40) {
 						if (!temp1.equals(st[1].trim().replaceAll("[^0-9]+", ""))) {
+							corSomDevice(st[1].trim().replaceAll("[^0-9]+", ""));
 							if (Integer.parseInt(st[1].trim().replaceAll("[^0-9]+", "")) > Integer.parseInt(temp1)) {
 								lblT1.setText("+");
-								Color color = new Color(255, 0, 0);
-								txt1.setForeground(color);
-								audio_Play("classic notify");
 							} else {
 								lblT1.setText("-");
-								txt1.setForeground(new Color(0, 0, 255));
 							}
 							temp1 = st[1].trim().replaceAll("[^0-9]+", "");
 						}
 					}
 					if (i == 44) {
 						if (!temp2.equals(st[1].trim().replaceAll("[^0-9]+", ""))) {
+							corSomBeterry(st[1].trim().replaceAll("[^0-9]+", ""));
 							if (Integer.parseInt(st[1].trim().replaceAll("[^0-9]+", "")) > Integer.parseInt(temp2)) {
 								lblT2.setText("+");
-								txt5.setForeground(new Color(255, 0, 0));
-								audio_Play("Windows XP Battery Low");
 							} else {
 								lblT2.setText("-");
-								txt5.setForeground(new Color(0, 0, 255));
 							}
 							temp2 = st[1].trim().replaceAll("[^0-9]+", "");
-						}
-						if (Integer.parseInt(temp2) > 40 || Integer.parseInt(temp1) > 44) {
-							rdSom.setSelected(true);
-							audio_Play("Windows XP Shutdown");
 						}
 					}
 				} else {
 					jt.get(i - 39).setText(st[1].trim());
+				}
+				if (i == 42) {
+					if (!bat.equals(st[1].trim().replaceAll("[^0-9]+", ""))) {
+						if (Integer.parseInt(st[1].trim().replaceAll("[^0-9]+", "")) > Integer.parseInt(bat)) {
+							lblBat.setText("+");
+							lblBat.setForeground(new Color(0, 0, 255));
+							audio_Play("Windows XP Balloon", rdSom.isSelected());
+						} else {
+							lblBat.setText("-");
+							lblBat.setForeground(new Color(255, 69, 0));
+							audio_Play("Windows XP Balloon", true);
+						}
+						bat = st[1].trim().replaceAll("[^0-9]+", "");
+					}
 				}
 			}
 		} catch (Exception e) {
@@ -413,8 +423,39 @@ public class vwMonitor extends JFrame {
 		}
 	}
 
-	private static void audio_Play(String nome) {
-		if (rdSom.isSelected()) {
+	private static void corSomDevice(String temp_1) {
+		int t = Integer.parseInt(temp_1);
+		if (t > 40) {
+			txt1.setForeground(new Color(139, 0, 0));
+			audio_Play("Windows XP Shutdown", true);
+		} else if (t <= 40 && t > 35) {
+			txt1.setForeground(new Color(255, 45, 33));
+			audio_Play("classic notify", rdSom.isSelected());
+		} else if (t <= 35) {
+			txt1.setForeground(new Color(0, 0, 0));
+			audio_Play("classic notify", rdSom.isSelected());
+		}
+	}
+
+	private static void corSomBeterry(String temp_1) {
+		int t = Integer.parseInt(temp_1);
+		if (t > 35) {
+			txt5.setForeground(new Color(139, 0, 0));
+			audio_Play("Windows XP Shutdown", true);
+		} else if (t <= 35 && t > 33) {
+			txt5.setForeground(new Color(255, 45, 33));
+			audio_Play("Windows XP Battery Low", rdSom.isSelected());
+		} else if (t <= 33 && t > 30) {
+			txt5.setForeground(new Color(226, 144, 0));
+			audio_Play("Windows XP Battery Low", rdSom.isSelected());
+		} else {
+			txt5.setForeground(new Color(0, 0, 0));
+			audio_Play("Windows XP Battery Low", rdSom.isSelected());
+		}
+	}
+
+	private static void audio_Play(String nome, boolean on) {
+		if (on) {
 			File f = new File("sons/" + nome + ".wav");
 			new AePlayWave(f.getAbsolutePath()).start();
 		}
@@ -449,6 +490,7 @@ public class vwMonitor extends JFrame {
 					String[] sp = s.split(" ");
 					ms = sp[sp.length - 2].substring(6, sp[sp.length - 2].length());
 					ping0.setText(ms);
+					colorPing(ping0, Integer.parseInt(ms.substring(0, ms.length() - 2)));
 					minMedMax(ms);
 				}
 			} else {
@@ -473,8 +515,21 @@ public class vwMonitor extends JFrame {
 		}
 		med = (ms_att + med) / 2;
 		ping1.setText(min + "ms");
+		colorPing(ping1, min);
 		ping2.setText(med + "ms");
+		colorPing(ping2, med);
 		ping3.setText(max + "ms");
+		colorPing(ping3, max);
+	}
+
+	private void colorPing(JTextField ping, int valor) {
+		if (valor > 100) {
+			ping.setForeground(new Color(255, 0, 0));
+		} else if (valor <= 100 && valor > 75) {
+			ping.setForeground(new Color(0, 0, 0));
+		} else if (valor <= 75) {
+			ping.setForeground(new Color(0, 0, 255));
+		}
 	}
 
 	private void zerar_ping() {
