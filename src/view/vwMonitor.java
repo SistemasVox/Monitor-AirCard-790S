@@ -1,7 +1,10 @@
+package view;
+
 import java.awt.EventQueue;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.border.EmptyBorder;
+import utils.AePlayWave;
 import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.SwingConstants;
@@ -55,6 +58,7 @@ public class vwMonitor extends JFrame {
 	private static JLabel lblBat;
 	private static int min = 990, med = 0, max = 0, c_s = 0;
 	private static String s, ms, temp1 = "99", temp2 = "99", bat = "100";
+	private JLabel lblg;
 
 	public static void main(String[] args) {
 		EventQueue.invokeLater(new Runnable() {
@@ -63,7 +67,7 @@ public class vwMonitor extends JFrame {
 					vwMonitor frame = new vwMonitor();
 					frame.setVisible(true);
 				} catch (Exception e) {
-					e.printStackTrace();
+					erro(e.getMessage());
 				}
 			}
 		});
@@ -93,7 +97,7 @@ public class vwMonitor extends JFrame {
 									txtArea.setText("Monitorando" + (pontos(contagem)));
 									contagem++;
 								} catch (InterruptedException e) {
-									txtArea.setText(e.getMessage());
+									erro(e.getMessage());
 								}
 							} while (continuar);
 						}
@@ -241,7 +245,7 @@ public class vwMonitor extends JFrame {
 		txtArea.setEditable(false);
 		txtArea.setBounds(96, 203, 250, 22);
 		contentPane.add(txtArea);
-		JLabel lblg = new JLabel("GoogleBR:");
+		lblg = new JLabel("GoogleBR:");
 		lblg.addMouseListener(new MouseAdapter() {
 			@Override
 			public void mouseClicked(MouseEvent e) {
@@ -303,7 +307,7 @@ public class vwMonitor extends JFrame {
 								txtArea.setText("Continuar FALSE");
 							}
 						} catch (IOException e) {
-							txtArea.setText(e.getMessage());
+							erro(e.getMessage());
 						}
 					}
 				}).start();
@@ -352,7 +356,7 @@ public class vwMonitor extends JFrame {
 			fos.getChannel().transferFrom(rbc, 0, Long.MAX_VALUE);
 			escrever();
 		} catch (Exception e) {
-			txtArea.setText(e.getMessage());
+			erro(e.getMessage());
 		}
 	}
 
@@ -418,9 +422,13 @@ public class vwMonitor extends JFrame {
 				}
 			}
 		} catch (Exception e) {
-			txtArea.setText(e.getMessage());
-			System.out.println(e.getMessage());
+			erro(e.getMessage());
 		}
+	}
+
+	private static void erro(String msg) {
+		vwError404 frame = new vwError404(msg);
+		frame.setVisible(true);
 	}
 
 	private static void corSomDevice(String temp_1) {
@@ -431,8 +439,11 @@ public class vwMonitor extends JFrame {
 		} else if (t <= 40 && t > 35) {
 			txt1.setForeground(new Color(255, 45, 33));
 			audio_Play("classic notify", rdSom.isSelected());
-		} else if (t <= 35) {
+		} else if (t <= 35 && t > 30) {
 			txt1.setForeground(new Color(0, 0, 0));
+			audio_Play("classic notify", rdSom.isSelected());
+		} else if (t < 30) {
+			txt1.setForeground(new Color(0, 0, 255));
 			audio_Play("classic notify", rdSom.isSelected());
 		}
 	}
@@ -448,8 +459,11 @@ public class vwMonitor extends JFrame {
 		} else if (t <= 33 && t > 30) {
 			txt5.setForeground(new Color(226, 144, 0));
 			audio_Play("Windows XP Battery Low", rdSom.isSelected());
-		} else {
+		} else if (t <= 30 && t > 25) {
 			txt5.setForeground(new Color(0, 0, 0));
+			audio_Play("Windows XP Battery Low", rdSom.isSelected());
+		} else {
+			txt5.setForeground(new Color(0, 0, 255));
 			audio_Play("Windows XP Battery Low", rdSom.isSelected());
 		}
 	}
@@ -471,11 +485,19 @@ public class vwMonitor extends JFrame {
 
 	private void ping() throws IOException {
 		List<String> commands = new ArrayList<String>();
-		commands.add("ping");
-		commands.add("-t");
-		commands.add("-l");
-		commands.add("756");
-		commands.add("google.com.br");
+		if (System.getProperty("os.name").matches(".*indows.*")) {
+			commands.add("ping");
+			commands.add("-t");
+			commands.add("-l");
+			commands.add("756");
+			commands.add("google.com.br");
+		} else if (System.getProperty("os.name").matches(".*inux.*")) {
+			commands.add("ping");
+			commands.add("-s");
+			commands.add("756");
+			commands.add("bing.com.br");
+			lblg.setText("BingBR");
+		}
 		google(commands);
 	}
 
