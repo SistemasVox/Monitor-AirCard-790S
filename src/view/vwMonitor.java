@@ -59,6 +59,7 @@ public class vwMonitor extends JFrame {
 	private static int min = 990, med = 0, max = 0, c_s = 0;
 	private static String s, ms, temp1 = "99", temp2 = "99", bat = "100";
 	private JLabel lblg;
+	private static vwError404 erro;
 
 	public static void main(String[] args) {
 		EventQueue.invokeLater(new Runnable() {
@@ -380,7 +381,7 @@ public class vwMonitor extends JFrame {
 			for (int i = 39; i < 45; i++) {
 				String[] st = listadeStrings.get(i).split(":");
 				if (i == 40 || i == 44) {
-					jt.get(i - 39).setText(st[1].trim().replaceAll("[^0-9]+", "") + "°");
+					jt.get(i - 39).setText(st[1].trim().replaceAll("[^0-9]+", "") + "Â°");
 					if (i == 40) {
 						if (!temp1.equals(st[1].trim().replaceAll("[^0-9]+", ""))) {
 							corSomDevice(st[1].trim().replaceAll("[^0-9]+", ""));
@@ -427,8 +428,13 @@ public class vwMonitor extends JFrame {
 	}
 
 	private static void erro(String msg) {
-		vwError404 frame = new vwError404(msg);
-		frame.setVisible(true);
+		if (erro == null) {
+			erro = new vwError404(msg);
+			erro.setVisible(true);
+		} else {
+			erro.setVisible(true);
+			erro.msg(msg);
+		}
 	}
 
 	private static void corSomDevice(String temp_1) {
@@ -495,8 +501,8 @@ public class vwMonitor extends JFrame {
 			commands.add("ping");
 			commands.add("-s");
 			commands.add("756");
-			commands.add("bing.com.br");
-			lblg.setText("BingBR");
+			commands.add("1.0.0.1");
+			lblg.setText("Cloudflare:");
 		}
 		google(commands);
 	}
@@ -509,10 +515,14 @@ public class vwMonitor extends JFrame {
 		while ((s = stdInput.readLine()) != null) {
 			if (continuar_ping) {
 				if (s.matches(".*ms.*")) {
-					String[] sp = s.split(" ");
-					ms = sp[sp.length - 2].substring(6, sp[sp.length - 2].length());
-					ping0.setText(ms);
-					colorPing(ping0, Integer.parseInt(ms.substring(0, ms.length() - 2)));
+					String[] sp = s.split("=");
+					for (int i = 0; i < sp.length; i++) {
+						if (sp[i].matches(".*ms.*")) {
+							ms = sp[i].trim().replaceAll("[^0-9]+", "");
+						}
+					}
+					ping0.setText(ms + "ms");
+					colorPing(ping0, Integer.parseInt(ms));
 					minMedMax(ms);
 				}
 			} else {
@@ -522,13 +532,13 @@ public class vwMonitor extends JFrame {
 		}
 	}
 
-	private void minMedMax(String ms2) {
+	private void minMedMax(String ms_atual) {
 		if (c_s > 60) {
 			zerar_ping();
 		} else {
 			c_s++;
 		}
-		int ms_att = Integer.parseInt(ms2.substring(0, ms2.length() - 2));
+		int ms_att = Integer.parseInt(ms);
 		if (ms_att > max) {
 			max = ms_att;
 		}

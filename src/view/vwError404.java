@@ -51,6 +51,9 @@ public class vwError404 extends JFrame {
 		scrollPane.setBounds(10, 46, 615, 324);
 		contentPane.add(scrollPane);
 		textArea = new JTextArea();
+		textArea.setWrapStyleWord(true);
+		textArea.setLineWrap(true);
+		textArea.setEditable(false);
 		textArea.setFont(new Font("Monospaced", Font.BOLD, 14));
 		scrollPane.setViewportView(textArea);
 		txtTitulo = new JLabel("Erro Exception!");
