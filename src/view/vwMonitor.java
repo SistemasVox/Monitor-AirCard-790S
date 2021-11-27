@@ -7,6 +7,7 @@ import javax.swing.border.EmptyBorder;
 import utils.AePlayWave;
 import javax.swing.JButton;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 import javax.swing.SwingConstants;
 import java.awt.event.ActionListener;
 import java.io.BufferedReader;
@@ -36,7 +37,7 @@ public class vwMonitor extends JFrame {
 	private JPanel contentPane;
 	private static JTextField txt0;
 	private static JTextField txt1;
-	private static JTextField txt2;
+	private static JTextField txtVolts;
 	private static JTextField txt3;
 	private static JTextField txt4;
 	private static JTextField txt5;
@@ -56,7 +57,7 @@ public class vwMonitor extends JFrame {
 	private static JLabel lblT1;
 	private static JLabel lblT2;
 	private static JLabel lblBat;
-	private static int min = 990, med = 0, max = 0, c_s = 0;
+	private static int min = 990, med = 0, max = 0, c_s = 0, time_ping = 60, mv = 4300;
 	private static String s, ms, temp1 = "99", temp2 = "99", bat = "100";
 	private JLabel lblg;
 	private static vwError404 erro;
@@ -197,15 +198,15 @@ public class vwMonitor extends JFrame {
 		txt1.setEditable(false);
 		txt1.setColumns(10);
 		contentPane.add(txt1);
-		txt2 = new JTextField();
-		txt2.setBounds(177, 87, 86, 20);
-		jt.add(txt2);
-		txt2.setText("00");
-		txt2.setFont(new Font("Tahoma", Font.BOLD, 14));
-		txt2.setHorizontalAlignment(SwingConstants.CENTER);
-		txt2.setEditable(false);
-		txt2.setColumns(10);
-		contentPane.add(txt2);
+		txtVolts = new JTextField();
+		txtVolts.setBounds(177, 87, 86, 20);
+		jt.add(txtVolts);
+		txtVolts.setText("00");
+		txtVolts.setFont(new Font("Tahoma", Font.BOLD, 14));
+		txtVolts.setHorizontalAlignment(SwingConstants.CENTER);
+		txtVolts.setEditable(false);
+		txtVolts.setColumns(10);
+		contentPane.add(txtVolts);
 		txt3 = new JTextField();
 		txt3.setBounds(177, 112, 86, 20);
 		jt.add(txt3);
@@ -326,6 +327,18 @@ public class vwMonitor extends JFrame {
 		ping3.setBounds(353, 112, 86, 20);
 		contentPane.add(ping3);
 		JLabel lblmax = new JLabel("Max:");
+		lblmax.addMouseListener(new MouseAdapter() {
+			@Override
+			public void mouseClicked(MouseEvent e) {
+				try {
+					time_ping = Integer.parseInt(JOptionPane.showInputDialog("Novo tempo de ping?")) * 60;
+					erro("Novo tempo de ping: "+time_ping);
+				} catch (Exception e2) {
+					time_ping = 60;
+					erro("Erro de tempo de ping, novo ping: "+time_ping);
+				}
+			}
+		});
 		lblmax.setHorizontalAlignment(SwingConstants.RIGHT);
 		lblmax.setFont(new Font("Tahoma", Font.BOLD, 12));
 		lblmax.setBounds(316, 114, 36, 14);
@@ -420,6 +433,14 @@ public class vwMonitor extends JFrame {
 							audio_Play("Windows XP Balloon", true);
 						}
 						bat = st[1].trim().replaceAll("[^0-9]+", "");
+					}
+				}
+				if (i == 41) {
+					if (Integer.parseInt(st[1].trim().replaceAll("[^0-9]+", "")) > mv) {
+						txtVolts.setForeground(new Color(255, 69, 0));
+						audio_Play("Windows XP Balloon", true);
+					}else {
+						txtVolts.setForeground(new Color(0, 0, 0));
 					}
 				}
 			}
@@ -537,11 +558,11 @@ public class vwMonitor extends JFrame {
 	private void pingSom(String ping) {
 		if (Integer.parseInt(ping) > 1500) {
 			audio_Play("windows xp pop-up blocked", rdSom.isSelected());
-		}		
+		}
 	}
 
 	private void minMedMax(String ms_atual) {
-		if (c_s > 60) {
+		if (c_s > time_ping) {
 			zerar_ping();
 		} else {
 			c_s++;
@@ -553,7 +574,11 @@ public class vwMonitor extends JFrame {
 		if (ms_att < min) {
 			min = ms_att;
 		}
-		med = (ms_att + med) / 2;
+		if (med != 0) {
+			med = (ms_att + med) / 2;
+		} else {
+			med = ms_att;
+		}
 		ping1.setText(min + "ms");
 		colorPing(ping1, min);
 		ping2.setText(med + "ms");
