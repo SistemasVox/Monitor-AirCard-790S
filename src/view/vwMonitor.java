@@ -332,10 +332,10 @@ public class vwMonitor extends JFrame {
 			public void mouseClicked(MouseEvent e) {
 				try {
 					time_ping = Integer.parseInt(JOptionPane.showInputDialog("Novo tempo de ping?")) * 60;
-					erro("Novo tempo de ping: "+time_ping);
+					erro("Novo tempo de ping: " + time_ping);
 				} catch (Exception e2) {
 					time_ping = 60;
-					erro("Erro de tempo de ping, novo ping: "+time_ping);
+					erro("Erro de tempo de ping, novo ping: " + time_ping);
 				}
 			}
 		});
@@ -438,8 +438,11 @@ public class vwMonitor extends JFrame {
 				if (i == 41) {
 					if (Integer.parseInt(st[1].trim().replaceAll("[^0-9]+", "")) > mv) {
 						txtVolts.setForeground(new Color(255, 69, 0));
+						audio_Play("Windows XP Balloon", rdSom.isSelected());
+					} else if (Integer.parseInt(st[1].trim().replaceAll("[^0-9]+", "")) > mv + mv * 0.1) {
+						txtVolts.setForeground(new Color(255, 0, 0));
 						audio_Play("Windows XP Balloon", true);
-					}else {
+					} else {
 						txtVolts.setForeground(new Color(0, 0, 0));
 					}
 				}
