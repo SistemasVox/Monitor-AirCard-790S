@@ -80,11 +80,12 @@ public class vwMonitor extends JFrame {
 		contentPane = new JPanel();
 		contentPane.setBorder(new EmptyBorder(5, 5, 5, 5));
 		setContentPane(contentPane);
-		JButton btnStart = new JButton("Come\u00E7ar");
+		JButton btnStart = new JButton("Começar");
 		btnStart.setBounds(10, 228, 135, 23);
 		btnStart.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				if (continuar) {
+					audio_Play("Windows XP Startup", true);
 					new Thread(new Runnable() {
 						@Override
 						public void run() {
@@ -381,7 +382,7 @@ public class vwMonitor extends JFrame {
 			for (int i = 39; i < 45; i++) {
 				String[] st = listadeStrings.get(i).split(":");
 				if (i == 40 || i == 44) {
-					jt.get(i - 39).setText(st[1].trim().replaceAll("[^0-9]+", "") + "Â°");
+					jt.get(i - 39).setText(st[1].trim().replaceAll("[^0-9]+", "") + "°");
 					if (i == 40) {
 						if (!temp1.equals(st[1].trim().replaceAll("[^0-9]+", ""))) {
 							corSomDevice(st[1].trim().replaceAll("[^0-9]+", ""));
@@ -427,7 +428,7 @@ public class vwMonitor extends JFrame {
 		}
 	}
 
-	private static void erro(String msg) {
+	public static void erro(String msg) {
 		if (erro == null) {
 			erro = new vwError404(msg);
 			erro.setVisible(true);
@@ -519,6 +520,7 @@ public class vwMonitor extends JFrame {
 					for (int i = 0; i < sp.length; i++) {
 						if (sp[i].matches(".*ms.*")) {
 							ms = sp[i].trim().replaceAll("[^0-9]+", "");
+							pingSom(ms);
 						}
 					}
 					ping0.setText(ms + "ms");
@@ -530,6 +532,12 @@ public class vwMonitor extends JFrame {
 				zerar_ping();
 			}
 		}
+	}
+
+	private void pingSom(String ping) {
+		if (Integer.parseInt(ping) > 1500) {
+			audio_Play("windows xp pop-up blocked", rdSom.isSelected());
+		}		
 	}
 
 	private void minMedMax(String ms_atual) {

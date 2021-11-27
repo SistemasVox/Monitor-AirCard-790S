@@ -8,7 +8,9 @@ import javax.sound.sampled.DataLine;
 import javax.sound.sampled.FloatControl; 
 import javax.sound.sampled.LineUnavailableException; 
 import javax.sound.sampled.SourceDataLine; 
-import javax.sound.sampled.UnsupportedAudioFileException; 
+import javax.sound.sampled.UnsupportedAudioFileException;
+
+import view.vwMonitor; 
  
 public class AePlayWave extends Thread { 
  
@@ -44,10 +46,13 @@ public class AePlayWave extends Thread {
         try { 
             audioInputStream = AudioSystem.getAudioInputStream(soundFile);
         } catch (UnsupportedAudioFileException e1) { 
+        	vwMonitor.erro(e1.getMessage());
             e1.printStackTrace();
+            vwMonitor.erro(e1.getMessage());
             return;
         } catch (IOException e1) { 
             e1.printStackTrace();
+            vwMonitor.erro(e1.getMessage());
             return;
         } 
  
@@ -60,9 +65,11 @@ public class AePlayWave extends Thread {
             auline.open(format);
         } catch (LineUnavailableException e) { 
             e.printStackTrace();
+            vwMonitor.erro(e.getMessage());
             return;
         } catch (Exception e) { 
             e.printStackTrace();
+            vwMonitor.erro(e.getMessage());
             return;
         } 
  
@@ -87,6 +94,7 @@ public class AePlayWave extends Thread {
             } 
         } catch (IOException e) { 
             e.printStackTrace();
+            vwMonitor.erro(e.getMessage());
             return;
         } finally { 
             auline.drain();
