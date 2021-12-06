@@ -57,7 +57,7 @@ public class vwMonitor extends JFrame {
 	private static JLabel lblT1;
 	private static JLabel lblT2;
 	private static JLabel lblBat;
-	private static int min = 990, med = 0, max = 0, c_s = 0, time_ping = 60, mv = 4300;
+	private static int min = 990, med = 0, max = 0, c_s = 0, time_ping = 60, mv = 4300, mvB = 4300;
 	private static String s, ms, temp1 = "99", temp2 = "99", bat = "100";
 	private JLabel lblg;
 	private static vwError404 erro;
@@ -332,10 +332,10 @@ public class vwMonitor extends JFrame {
 			public void mouseClicked(MouseEvent e) {
 				try {
 					time_ping = Integer.parseInt(JOptionPane.showInputDialog("Novo tempo de ping?")) * 60;
-					erro("Novo tempo de ping: " + time_ping);
+					erro("Novo tempo de ping: " + time_ping +"s.");
 				} catch (Exception e2) {
 					time_ping = 60;
-					erro("Erro de tempo de ping, novo ping: " + time_ping);
+					erro("Erro de tempo de ping, novo ping: " + time_ping+"s.");
 				}
 			}
 		});
@@ -436,15 +436,19 @@ public class vwMonitor extends JFrame {
 					}
 				}
 				if (i == 41) {
-					if (Integer.parseInt(st[1].trim().replaceAll("[^0-9]+", "")) > mv) {
-						txtVolts.setForeground(new Color(255, 69, 0));
-						audio_Play("Windows XP Balloon", rdSom.isSelected());
-					} else if (Integer.parseInt(st[1].trim().replaceAll("[^0-9]+", "")) > mv + mv * 0.1) {
-						txtVolts.setForeground(new Color(255, 0, 0));
-						audio_Play("Windows XP Balloon", true);
-					} else {
-						txtVolts.setForeground(new Color(0, 0, 0));
+					if (Integer.parseInt(st[1].trim().replaceAll("[^0-9]+", "")) != mvB) {
+						mvB = Integer.parseInt(st[1].trim().replaceAll("[^0-9]+", ""));
+						if (Integer.parseInt(st[1].trim().replaceAll("[^0-9]+", "")) > mv) {
+							txtVolts.setForeground(new Color(255, 69, 0));
+							audio_Play("Windows XP Balloon", rdSom.isSelected());
+						} else if (Integer.parseInt(st[1].trim().replaceAll("[^0-9]+", "")) > mv + mv * 0.1) {
+							txtVolts.setForeground(new Color(255, 0, 0));
+							audio_Play("Windows XP Balloon", true);
+						} else {
+							txtVolts.setForeground(new Color(0, 0, 0));
+						}
 					}
+
 				}
 			}
 		} catch (Exception e) {
@@ -577,10 +581,12 @@ public class vwMonitor extends JFrame {
 		if (ms_att < min) {
 			min = ms_att;
 		}
-		if (med != 0) {
+		if (med != -1) {
 			med = (ms_att + med) / 2;
 		} else {
+			min = ms_att;
 			med = ms_att;
+			max = ms_att;
 		}
 		ping1.setText(min + "ms");
 		colorPing(ping1, min);
@@ -604,7 +610,7 @@ public class vwMonitor extends JFrame {
 		c_s = 0;
 		min = 999;
 		max = 0;
-		med = 0;
+		med = -1;
 		ping0.setText("--");
 		ping1.setText("--");
 		ping2.setText("--");
