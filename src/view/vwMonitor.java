@@ -58,6 +58,7 @@ public class vwMonitor extends JFrame {
 	private static JLabel lblT2;
 	private static JLabel lblBat;
 	private static int min = 990, med = 0, max = 0, c_s = 0, time_ping = 60, mv = 4300, mvB = 4300;
+	private static ArrayList<Integer> medA = new ArrayList<>();
 	private static String s, ms, temp1 = "99", temp2 = "99", bat = "100";
 	private JLabel lblg;
 	private static vwError404 erro;
@@ -525,7 +526,7 @@ public class vwMonitor extends JFrame {
 			commands.add("-t");
 			commands.add("-l");
 			commands.add("756");
-			commands.add("google.com.br");
+			commands.add("8.8.4.4");
 		} else if (System.getProperty("os.name").matches(".*inux.*")) {
 			commands.add("ping");
 			commands.add("-s");
@@ -553,7 +554,7 @@ public class vwMonitor extends JFrame {
 					}
 					ping0.setText(ms + "ms");
 					colorPing(ping0, Integer.parseInt(ms));
-					minMedMax(ms);
+					minMedMax();
 				}
 			} else {
 				process.destroy();
@@ -568,7 +569,7 @@ public class vwMonitor extends JFrame {
 		}
 	}
 
-	private void minMedMax(String ms_atual) {
+	private void minMedMax() {
 		if (c_s > time_ping) {
 			zerar_ping();
 		} else {
@@ -582,10 +583,19 @@ public class vwMonitor extends JFrame {
 			min = ms_att;
 		}
 		if (med != -1) {
-			med = (ms_att + med) / 2;
+			//med = (ms_att + med) / 2;
+			medA.add(ms_att);
+			int medT = 0;
+			for (int i = 0; i < medA.size(); i++) {
+				medT += medA.get(i);
+			}
+			med = (medT / medA.size());
 		} else {
+			medA.clear();
+			medA.add(ms_att);
 			min = ms_att;
-			med = ms_att;
+			//med = ms_att;
+			med = medA.get(0);
 			max = ms_att;
 		}
 		ping1.setText(min + "ms");
