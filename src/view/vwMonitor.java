@@ -311,7 +311,7 @@ public class vwMonitor extends JFrame {
 								txtArea.setText("Continuar FALSE");
 							}
 						} catch (IOException e) {
-							erro(e.getMessage());
+							erro(e.getMessage() + " " + hora());
 						}
 					}
 				}).start();
@@ -333,10 +333,10 @@ public class vwMonitor extends JFrame {
 			public void mouseClicked(MouseEvent e) {
 				try {
 					time_ping = Integer.parseInt(JOptionPane.showInputDialog("Novo tempo de ping?")) * 60;
-					erro("Novo tempo de ping: " + time_ping +"s.");
+					erro("Novo tempo de ping: " + time_ping + "s.");
 				} catch (Exception e2) {
 					time_ping = 60;
-					erro("Erro de tempo de ping, novo ping: " + time_ping+"s.");
+					erro("Erro de tempo de ping, novo ping: " + time_ping + "s.");
 				}
 			}
 		});
@@ -372,7 +372,7 @@ public class vwMonitor extends JFrame {
 			fos.getChannel().transferFrom(rbc, 0, Long.MAX_VALUE);
 			escrever();
 		} catch (Exception e) {
-			erro(e.getMessage());
+			erro(e.getMessage() + " " + hora());
 		}
 	}
 
@@ -583,7 +583,7 @@ public class vwMonitor extends JFrame {
 			min = ms_att;
 		}
 		if (med != -1) {
-			//med = (ms_att + med) / 2;
+			// med = (ms_att + med) / 2;
 			medA.add(ms_att);
 			int medT = 0;
 			for (int i = 0; i < medA.size(); i++) {
@@ -594,7 +594,7 @@ public class vwMonitor extends JFrame {
 			medA.clear();
 			medA.add(ms_att);
 			min = ms_att;
-			//med = ms_att;
+			// med = ms_att;
 			med = medA.get(0);
 			max = ms_att;
 		}
@@ -625,6 +625,10 @@ public class vwMonitor extends JFrame {
 		ping1.setText("--");
 		ping2.setText("--");
 		ping3.setText("--");
-		lblHora.setText(new SimpleDateFormat("hh:mm:ss").format(new Date()));
+		lblHora.setText(hora());
+	}
+
+	private static String hora() {
+		return new SimpleDateFormat("hh:mm:ss").format(new Date());
 	}
 }
