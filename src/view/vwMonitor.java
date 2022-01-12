@@ -53,7 +53,7 @@ public class vwMonitor extends JFrame {
 	private JTextField ping3;
 	private Process process;
 	private JLabel lblHora;
-	private static JRadioButton rdSom;
+	private static JRadioButton rdSom, rdCustomPing;
 	private static JLabel lblT1;
 	private static JLabel lblT2;
 	private static JLabel lblBat;
@@ -88,6 +88,7 @@ public class vwMonitor extends JFrame {
 			public void actionPerformed(ActionEvent e) {
 				if (continuar) {
 					audio_Play("Windows XP Startup", true);
+					btnStart.setEnabled(false);
 					new Thread(new Runnable() {
 						@Override
 						public void run() {
@@ -121,6 +122,7 @@ public class vwMonitor extends JFrame {
 					continuar = false;
 				} else {
 					continuar = true;
+					btnStart.setEnabled(true);
 				}
 			}
 		});
@@ -249,14 +251,40 @@ public class vwMonitor extends JFrame {
 		txtArea.setEditable(false);
 		txtArea.setBounds(96, 203, 250, 22);
 		contentPane.add(txtArea);
+		JButton btnPing = new JButton("Ping");
+		btnPing.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				new Thread(new Runnable() {
+					@Override
+					public void run() {
+						try {
+							if (continuar_ping) {
+								btnPing.setEnabled(false);
+								ping();
+							} else {
+								txtArea.setText("Continuar FALSE");
+							}
+						} catch (IOException e) {
+							erro(e.getMessage() + " " + hora());
+						}
+					}
+				}).start();
+			}
+		});
+		btnPing.setBounds(254, 228, 89, 23);
+		contentPane.add(btnPing);
 		lblg = new JLabel("GoogleBR:");
 		lblg.addMouseListener(new MouseAdapter() {
 			@Override
 			public void mouseClicked(MouseEvent e) {
 				if (continuar_ping) {
 					continuar_ping = false;
+					if (process != null) {
+						process.destroy();
+					}
 				} else {
 					continuar_ping = true;
+					btnPing.setEnabled(true);
 				}
 			}
 		});
@@ -298,27 +326,6 @@ public class vwMonitor extends JFrame {
 		ping2.setColumns(10);
 		ping2.setBounds(353, 87, 86, 20);
 		contentPane.add(ping2);
-		JButton btnNewButton = new JButton("Ping");
-		btnNewButton.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				new Thread(new Runnable() {
-					@Override
-					public void run() {
-						try {
-							if (continuar_ping) {
-								ping();
-							} else {
-								txtArea.setText("Continuar FALSE");
-							}
-						} catch (IOException e) {
-							erro(e.getMessage() + " " + hora());
-						}
-					}
-				}).start();
-			}
-		});
-		btnNewButton.setBounds(254, 228, 89, 23);
-		contentPane.add(btnNewButton);
 		ping3 = new JTextField();
 		ping3.setText("00");
 		ping3.setHorizontalAlignment(SwingConstants.CENTER);
@@ -360,6 +367,10 @@ public class vwMonitor extends JFrame {
 		lblBat.setFont(new Font("Tahoma", Font.BOLD, 14));
 		lblBat.setBounds(265, 114, 36, 14);
 		contentPane.add(lblBat);
+		rdCustomPing = new JRadioButton("Ping");
+		rdCustomPing.setHorizontalAlignment(SwingConstants.RIGHT);
+		rdCustomPing.setBounds(265, 175, 86, 23);
+		contentPane.add(rdCustomPing);
 	}
 
 	private static void download() {
@@ -449,7 +460,6 @@ public class vwMonitor extends JFrame {
 							txtVolts.setForeground(new Color(0, 0, 0));
 						}
 					}
-
 				}
 			}
 		} catch (Exception e) {
@@ -522,17 +532,35 @@ public class vwMonitor extends JFrame {
 	private void ping() throws IOException {
 		List<String> commands = new ArrayList<String>();
 		if (System.getProperty("os.name").matches(".*indows.*")) {
-			commands.add("ping");
-			commands.add("-t");
-			commands.add("-l");
-			commands.add("756");
-			commands.add("8.8.4.4");
+			if (rdCustomPing.isSelected()) {
+				String[] comando = JOptionPane.showInputDialog(null, "Qual o comando do Ping?").split(" ");
+				for (int i = 0; i < comando.length; i++) {
+					commands.add(comando[i]);
+				}
+				lblg.setText("Custom:");
+				lblg.setToolTipText(comando[comando.length - 1]);
+			} else {
+				commands.add("ping");
+				commands.add("-t");
+				commands.add("-l");
+				commands.add("756");
+				commands.add("8.8.4.4");
+			}
 		} else if (System.getProperty("os.name").matches(".*inux.*")) {
-			commands.add("ping");
-			commands.add("-s");
-			commands.add("756");
-			commands.add("1.0.0.1");
-			lblg.setText("Cloudflare:");
+			if (rdCustomPing.isSelected()) {
+				String[] comando = JOptionPane.showInputDialog(null, "Qual o comando do Ping?").split(" ");
+				for (int i = 0; i < comando.length; i++) {
+					commands.add(comando[i]);
+				}
+				lblg.setText("Custom:");
+				lblg.setToolTipText(comando[comando.length - 1]);
+			} else {
+				commands.add("ping");
+				commands.add("-s");
+				commands.add("756");
+				commands.add("1.0.0.1");
+				lblg.setText("Cloudflare:");
+			}
 		}
 		google(commands);
 	}
@@ -583,7 +611,6 @@ public class vwMonitor extends JFrame {
 			min = ms_att;
 		}
 		if (med != -1) {
-			// med = (ms_att + med) / 2;
 			medA.add(ms_att);
 			int medT = 0;
 			for (int i = 0; i < medA.size(); i++) {
@@ -594,7 +621,6 @@ public class vwMonitor extends JFrame {
 			medA.clear();
 			medA.add(ms_att);
 			min = ms_att;
-			// med = ms_att;
 			med = medA.get(0);
 			max = ms_att;
 		}
