@@ -61,6 +61,7 @@ public class vwMonitor extends JFrame {
 	private static ArrayList<Integer> medA = new ArrayList<>();
 	private static String s, ms, temp1 = "99", temp2 = "99", bat = "100";
 	private JLabel lblg;
+	private JButton btnPing;
 	private static vwError404 erro;
 
 	public static void main(String[] args) {
@@ -251,7 +252,7 @@ public class vwMonitor extends JFrame {
 		txtArea.setEditable(false);
 		txtArea.setBounds(96, 203, 250, 22);
 		contentPane.add(txtArea);
-		JButton btnPing = new JButton("Ping");
+		btnPing = new JButton("Ping");
 		btnPing.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				new Thread(new Runnable() {
@@ -259,7 +260,6 @@ public class vwMonitor extends JFrame {
 					public void run() {
 						try {
 							if (continuar_ping) {
-								btnPing.setEnabled(false);
 								ping();
 							} else {
 								txtArea.setText("Continuar FALSE");
@@ -533,12 +533,17 @@ public class vwMonitor extends JFrame {
 		List<String> commands = new ArrayList<String>();
 		if (System.getProperty("os.name").matches(".*indows.*")) {
 			if (rdCustomPing.isSelected()) {
-				String[] comando = JOptionPane.showInputDialog(null, "Qual o comando do Ping?").split(" ");
+				String[] comando;
+				String entrada;
+				do {
+					entrada = JOptionPane.showInputDialog(null, "Qual o comando do Ping?");
+				} while (entrada == null || entrada.isEmpty());
+				comando = entrada.split(" ");
 				for (int i = 0; i < comando.length; i++) {
 					commands.add(comando[i]);
 				}
 				lblg.setText("Custom:");
-				lblg.setToolTipText(comando[comando.length - 1]);
+				lblg.setToolTipText(entrada);
 			} else {
 				commands.add("ping");
 				commands.add("-t");
@@ -548,12 +553,17 @@ public class vwMonitor extends JFrame {
 			}
 		} else if (System.getProperty("os.name").matches(".*inux.*")) {
 			if (rdCustomPing.isSelected()) {
-				String[] comando = JOptionPane.showInputDialog(null, "Qual o comando do Ping?").split(" ");
+				String[] comando;
+				String entrada;
+				do {
+					entrada = JOptionPane.showInputDialog(null, "Qual o comando do Ping?");
+				} while (entrada == null || entrada.isEmpty());
+				comando = entrada.split(" ");
 				for (int i = 0; i < comando.length; i++) {
 					commands.add(comando[i]);
 				}
 				lblg.setText("Custom:");
-				lblg.setToolTipText(comando[comando.length - 1]);
+				lblg.setToolTipText(entrada);
 			} else {
 				commands.add("ping");
 				commands.add("-s");
@@ -562,7 +572,9 @@ public class vwMonitor extends JFrame {
 				lblg.setText("Cloudflare:");
 			}
 		}
+		btnPing.setEnabled(false);
 		google(commands);
+		
 	}
 
 	private void google(List<String> commands) throws IOException {
