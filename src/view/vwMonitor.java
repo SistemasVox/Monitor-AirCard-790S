@@ -63,6 +63,7 @@ public class vwMonitor extends JFrame {
 	private JLabel lblg;
 	private JButton btnPing;
 	private static vwError404 erro;
+	private static boolean downON;
 
 	public static void main(String[] args) {
 		EventQueue.invokeLater(new Runnable() {
@@ -96,16 +97,18 @@ public class vwMonitor extends JFrame {
 							do {
 								try {
 									download();
-									Thread.sleep(Integer.parseInt(txtTime.getText().toString()));
 									if (contagem > 3) {
 										contagem = 0;
 									}
 									txtArea.setText("Monitorando" + (pontos(contagem)));
 									contagem++;
+									if (downON) {
+										Thread.sleep(Integer.parseInt(txtTime.getText().toString()));
+									}
 								} catch (InterruptedException e) {
 									erro(e.getMessage());
 								}
-							} while (continuar);
+							} while (downON);
 						}
 					}).start();
 				} else {
@@ -382,8 +385,11 @@ public class vwMonitor extends JFrame {
 			FileOutputStream fos = new FileOutputStream("about.txt");
 			fos.getChannel().transferFrom(rbc, 0, Long.MAX_VALUE);
 			escrever();
+			downON = true;
 		} catch (Exception e) {
 			erro(e.getMessage() + " " + hora());
+			txtArea.setText("Erro no Download.");
+			downON = false;
 		}
 	}
 
