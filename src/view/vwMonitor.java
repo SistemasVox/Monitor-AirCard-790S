@@ -62,6 +62,7 @@ public class vwMonitor extends JFrame {
 	private static String s, ms, temp1 = "99", temp2 = "99", bat = "100";
 	private JLabel lblg;
 	private JButton btnPing;
+	private static JButton btnStart;
 	private static vwError404 erro;
 	private static boolean downON;
 
@@ -80,11 +81,11 @@ public class vwMonitor extends JFrame {
 
 	public vwMonitor() {
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		setBounds(100, 100, 457, 300);
+		setBounds(100, 100, 469, 300);
 		contentPane = new JPanel();
 		contentPane.setBorder(new EmptyBorder(5, 5, 5, 5));
 		setContentPane(contentPane);
-		JButton btnStart = new JButton("Começar");
+		btnStart = new JButton("Começar");
 		btnStart.setBounds(10, 228, 135, 23);
 		btnStart.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
@@ -102,13 +103,14 @@ public class vwMonitor extends JFrame {
 									}
 									txtArea.setText("Monitorando" + (pontos(contagem)));
 									contagem++;
-									if (downON) {
+									if (downON && continuar) {
 										Thread.sleep(Integer.parseInt(txtTime.getText().toString()));
 									}
 								} catch (InterruptedException e) {
-									erro(e.getMessage());
+									txtArea.setText("Erro no Download.");
 								}
-							} while (downON);
+							} while (downON && continuar);
+							txtArea.setText("Monitoramento: STOP.");
 						}
 					}).start();
 				} else {
@@ -126,7 +128,9 @@ public class vwMonitor extends JFrame {
 					continuar = false;
 				} else {
 					continuar = true;
-					btnStart.setEnabled(true);
+					if (!btnStart.isEnabled()) {
+						btnStart.setEnabled(true);
+					}					
 				}
 			}
 		});
@@ -388,6 +392,7 @@ public class vwMonitor extends JFrame {
 			downON = true;
 		} catch (Exception e) {
 			erro(e.getMessage() + " " + hora());
+			btnStart.setEnabled(true);
 			txtArea.setText("Erro no Download.");
 			downON = false;
 		}
