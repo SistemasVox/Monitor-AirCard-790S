@@ -57,14 +57,18 @@ public class vwMonitor extends JFrame {
 	private static JLabel lblT1;
 	private static JLabel lblT2;
 	private static JLabel lblBat;
-	private static int min = 990, med = 0, max = 0, c_s = 0, time_ping = 60, mv = 4300, mvB = 4300;
+	private static int min = 990, med = 0, max = 0, c_s = 0, time_ping = 60, mv_new = 0, mv = 4300, mvB_old = 4300;
 	private static ArrayList<Integer> medA = new ArrayList<>();
-	private static String s, ms, temp1 = "99", temp2 = "99", bat = "100";
+	private static String s, ms, temp1 = "99", temp2 = "99", bat_old = "100", bat_new = "100";
 	private JLabel lblg;
 	private JButton btnPing;
+	private static JLabel lblVolts;
 	private static JButton btnStart;
 	private static vwError404 erro;
 	private static boolean downON;
+	private static int t_max = 40;
+	private static int tb_max = 35;
+	private JLabel lblVersion;
 
 	public static void main(String[] args) {
 		EventQueue.invokeLater(new Runnable() {
@@ -130,7 +134,7 @@ public class vwMonitor extends JFrame {
 					continuar = true;
 					if (!btnStart.isEnabled()) {
 						btnStart.setEnabled(true);
-					}					
+					}
 				}
 			}
 		});
@@ -149,7 +153,7 @@ public class vwMonitor extends JFrame {
 		lblT1.setVerticalAlignment(SwingConstants.BOTTOM);
 		lblT1.setHorizontalAlignment(SwingConstants.LEFT);
 		lblT1.setFont(new Font("Tahoma", Font.BOLD, 14));
-		lblT1.setBounds(265, 64, 36, 14);
+		lblT1.setBounds(265, 65, 36, 14);
 		contentPane.add(lblT1);
 		lblT2 = new JLabel("x");
 		lblT2.setVerticalAlignment(SwingConstants.BOTTOM);
@@ -201,6 +205,16 @@ public class vwMonitor extends JFrame {
 		contentPane.add(txt0);
 		txt0.setColumns(10);
 		txt1 = new JTextField();
+		txt1.addMouseListener(new MouseAdapter() {
+			@Override
+			public void mouseClicked(MouseEvent e) {
+				String temp = JOptionPane.showInputDialog("Qual nova Temperatura Max do Roteador?");
+				if (temp != null || !temp.isEmpty()) {
+					t_max = Integer.parseInt(temp);
+					txtArea.setText("Temperatura Max Roteador: " + temp);
+				}
+			}
+		});
 		txt1.setBounds(177, 62, 86, 20);
 		jt.add(txt1);
 		txt1.setText("00");
@@ -237,6 +251,16 @@ public class vwMonitor extends JFrame {
 		txt4.setColumns(10);
 		contentPane.add(txt4);
 		txt5 = new JTextField();
+		txt5.addMouseListener(new MouseAdapter() {
+			@Override
+			public void mouseClicked(MouseEvent e) {
+				String temp = JOptionPane.showInputDialog("Qual nova temperatura Max da Bateria?");
+				if (temp != null || !temp.isEmpty()) {
+					tb_max = Integer.parseInt(temp);
+					txtArea.setText("Temperatura Max Bateria: " + temp);
+				}
+			}
+		});
 		txt5.setBounds(177, 162, 86, 20);
 		jt.add(txt5);
 		txt5.setText("00");
@@ -378,6 +402,17 @@ public class vwMonitor extends JFrame {
 		rdCustomPing.setHorizontalAlignment(SwingConstants.RIGHT);
 		rdCustomPing.setBounds(265, 175, 86, 23);
 		contentPane.add(rdCustomPing);
+		lblVolts = new JLabel("");
+		lblVolts.setVerticalAlignment(SwingConstants.BOTTOM);
+		lblVolts.setHorizontalAlignment(SwingConstants.LEFT);
+		lblVolts.setFont(new Font("Tahoma", Font.BOLD, 14));
+		lblVolts.setBounds(265, 90, 36, 14);
+		contentPane.add(lblVolts);
+		lblVersion = new JLabel("v: 2.0.3.6");
+		lblVersion.setHorizontalAlignment(SwingConstants.RIGHT);
+		lblVersion.setFont(new Font("Times New Roman", Font.BOLD, 14));
+		lblVersion.setBounds(28, 12, 414, 14);
+		contentPane.add(lblVersion);
 	}
 
 	private static void download() {
@@ -445,8 +480,9 @@ public class vwMonitor extends JFrame {
 					jt.get(i - 39).setText(st[1].trim());
 				}
 				if (i == 42) {
-					if (!bat.equals(st[1].trim().replaceAll("[^0-9]+", ""))) {
-						if (Integer.parseInt(st[1].trim().replaceAll("[^0-9]+", "")) > Integer.parseInt(bat)) {
+					bat_new = st[1].trim().replaceAll("[^0-9]+", "");
+					if (!bat_old.equals(bat_new)) {
+						if (Integer.parseInt(bat_new) > Integer.parseInt(bat_old)) {
 							lblBat.setText("+");
 							lblBat.setForeground(new Color(0, 0, 255));
 							audio_Play("Windows XP Balloon", rdSom.isSelected());
@@ -455,21 +491,28 @@ public class vwMonitor extends JFrame {
 							lblBat.setForeground(new Color(255, 69, 0));
 							audio_Play("Windows XP Balloon", true);
 						}
-						bat = st[1].trim().replaceAll("[^0-9]+", "");
+						bat_old = bat_new;
 					}
 				}
 				if (i == 41) {
-					if (Integer.parseInt(st[1].trim().replaceAll("[^0-9]+", "")) != mvB) {
-						mvB = Integer.parseInt(st[1].trim().replaceAll("[^0-9]+", ""));
-						if (Integer.parseInt(st[1].trim().replaceAll("[^0-9]+", "")) > mv) {
+					mv_new = Integer.parseInt(st[1].trim().replaceAll("[^0-9]+", ""));
+					if (mv_new != mvB_old) {
+						if (mv_new > mv) {
 							txtVolts.setForeground(new Color(255, 69, 0));
 							audio_Play("Windows XP Balloon", rdSom.isSelected());
-						} else if (Integer.parseInt(st[1].trim().replaceAll("[^0-9]+", "")) > mv + mv * 0.1) {
+							lblVolts.setText("+");
+						} else if (mv_new > (mv + (mv * 0.1))) {
 							txtVolts.setForeground(new Color(255, 0, 0));
 							audio_Play("Windows XP Balloon", true);
 						} else {
 							txtVolts.setForeground(new Color(0, 0, 0));
 						}
+						if (mv_new > mvB_old) {
+							lblVolts.setText("+");
+						} else {
+							lblVolts.setText("-");
+						}
+						mvB_old = mv_new;
 					}
 				}
 			}
@@ -490,7 +533,7 @@ public class vwMonitor extends JFrame {
 
 	private static void corSomDevice(String temp_1) {
 		int t = Integer.parseInt(temp_1);
-		if (t > 40) {
+		if (t > t_max) {
 			txt1.setForeground(new Color(139, 0, 0));
 			audio_Play("Windows XP Shutdown", true);
 		} else if (t <= 40 && t > 35) {
@@ -507,7 +550,7 @@ public class vwMonitor extends JFrame {
 
 	private static void corSomBeterry(String temp_1) {
 		int t = Integer.parseInt(temp_1);
-		if (t > 35) {
+		if (t > tb_max) {
 			txt5.setForeground(new Color(139, 0, 0));
 			audio_Play("Windows XP Shutdown", true);
 		} else if (t <= 35 && t > 33) {
@@ -585,7 +628,6 @@ public class vwMonitor extends JFrame {
 		}
 		btnPing.setEnabled(false);
 		google(commands);
-		
 	}
 
 	private void google(List<String> commands) throws IOException {
