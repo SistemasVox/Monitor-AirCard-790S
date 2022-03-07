@@ -206,9 +206,10 @@ public class vwMonitor extends JFrame {
 		txt0.setColumns(10);
 		txt1 = new JTextField();
 		txt1.addMouseListener(new MouseAdapter() {
+			private String temp;
 			@Override
 			public void mouseClicked(MouseEvent e) {
-				String temp = JOptionPane.showInputDialog("Qual nova Temperatura Max do Roteador?");
+				temp = JOptionPane.showInputDialog("Qual nova Temperatura Max do Roteador?");
 				if (temp != null || !temp.isEmpty()) {
 					t_max = Integer.parseInt(temp);
 					txtArea.setText("Temperatura Max Roteador: " + temp);
@@ -252,9 +253,10 @@ public class vwMonitor extends JFrame {
 		contentPane.add(txt4);
 		txt5 = new JTextField();
 		txt5.addMouseListener(new MouseAdapter() {
+			private String temp;
 			@Override
 			public void mouseClicked(MouseEvent e) {
-				String temp = JOptionPane.showInputDialog("Qual nova temperatura Max da Bateria?");
+				temp = JOptionPane.showInputDialog("Qual nova temperatura Max da Bateria?");
 				if (temp != null || !temp.isEmpty()) {
 					tb_max = Integer.parseInt(temp);
 					txtArea.setText("Temperatura Max Bateria: " + temp);
@@ -408,7 +410,7 @@ public class vwMonitor extends JFrame {
 		lblVolts.setFont(new Font("Tahoma", Font.BOLD, 14));
 		lblVolts.setBounds(265, 90, 36, 14);
 		contentPane.add(lblVolts);
-		lblVersion = new JLabel("v: 2.0.3.6");
+		lblVersion = new JLabel("v: 2.0.3.7");
 		lblVersion.setHorizontalAlignment(SwingConstants.RIGHT);
 		lblVersion.setFont(new Font("Times New Roman", Font.BOLD, 14));
 		lblVersion.setBounds(28, 12, 414, 14);
@@ -536,13 +538,13 @@ public class vwMonitor extends JFrame {
 		if (t > t_max) {
 			txt1.setForeground(new Color(139, 0, 0));
 			audio_Play("Windows XP Shutdown", true);
-		} else if (t <= 40 && t > 35) {
+		} else if (t <= t_max && t > (t_max - 5)) {
 			txt1.setForeground(new Color(255, 45, 33));
 			audio_Play("classic notify", rdSom.isSelected());
-		} else if (t <= 35 && t > 30) {
+		} else if (t <= (t_max - 5) && t > (t_max - 10)) {
 			txt1.setForeground(new Color(0, 0, 0));
 			audio_Play("classic notify", rdSom.isSelected());
-		} else if (t < 30) {
+		} else if (t < (t_max - 10)) {
 			txt1.setForeground(new Color(0, 0, 255));
 			audio_Play("classic notify", rdSom.isSelected());
 		}
@@ -553,13 +555,13 @@ public class vwMonitor extends JFrame {
 		if (t > tb_max) {
 			txt5.setForeground(new Color(139, 0, 0));
 			audio_Play("Windows XP Shutdown", true);
-		} else if (t <= 35 && t > 33) {
+		} else if (t <= tb_max && t > (tb_max - 2)) {
 			txt5.setForeground(new Color(255, 45, 33));
 			audio_Play("Windows XP Battery Low", rdSom.isSelected());
-		} else if (t <= 33 && t > 30) {
+		} else if (t <= (tb_max - 2) && t > (tb_max - 5)) {
 			txt5.setForeground(new Color(226, 144, 0));
 			audio_Play("Windows XP Battery Low", rdSom.isSelected());
-		} else if (t <= 30 && t > 25) {
+		} else if (t <= (tb_max - 5) && t > (tb_max - 10)) {
 			txt5.setForeground(new Color(0, 0, 0));
 			audio_Play("Windows XP Battery Low", rdSom.isSelected());
 		} else {
