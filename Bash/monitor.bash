@@ -179,18 +179,33 @@ calculate_average_speeds() {
   local data_total="$2"
   local data_download="$3"
   local data_upload="$4"
+  
+  # Verifica se os campos necessários estão presentes e não são nulos
+  if [ "$duration" != "null" ] && [ "$data_total" != "null" ] && [ "$data_download" != "null" ] && [ "$data_upload" != "null" ]; then
+    average_speed=$(calculate_average_speed "$duration" "$data_total")
+    average_speed_formatted=$(format_bytes "$average_speed")
+    average_speed_mbps=$(format_mbps "$average_speed")
 
-  average_speed=$(calculate_average_speed "$duration" "$data_total")
-  average_speed_formatted=$(format_bytes "$average_speed")
-  average_speed_mbps=$(format_mbps "$average_speed")
+    average_download_speed=$(calculate_average_speed "$duration" "$data_download")
+    average_download_speed_formatted=$(format_bytes "$average_download_speed")
+    average_download_speed_mbps=$(format_mbps "$average_download_speed")
 
-  average_download_speed=$(calculate_average_speed "$duration" "$data_download")
-  average_download_speed_formatted=$(format_bytes "$average_download_speed")
-  average_download_speed_mbps=$(format_mbps "$average_download_speed")
+    average_upload_speed=$(calculate_average_speed "$duration" "$data_upload")
+    average_upload_speed_formatted=$(format_bytes "$average_upload_speed")
+    average_upload_speed_mbps=$(format_mbps "$average_upload_speed")
+  else
+    average_speed=0
+    average_speed_formatted="0 B"
+    average_speed_mbps="0 Mbps"
 
-  average_upload_speed=$(calculate_average_speed "$duration" "$data_upload")
-  average_upload_speed_formatted=$(format_bytes "$average_upload_speed")
-  average_upload_speed_mbps=$(format_mbps "$average_upload_speed")
+    average_download_speed=0
+    average_download_speed_formatted="0 B"
+    average_download_speed_mbps="0 Mbps"
+
+    average_upload_speed=0
+    average_upload_speed_formatted="0 B"
+    average_upload_speed_mbps="0 Mbps"
+  fi
 }
 
 # Função para imprimir informações de conexão
