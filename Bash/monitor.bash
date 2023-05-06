@@ -14,7 +14,7 @@ format_temperature() {
 }
 
 format_voltage() {
-  voltage=$(echo "$1 / 1000" | bc -l)
+  voltage=$(echo "scale=4; $1 / 1000" | bc -l)
   printf "%.2fV" "$voltage"
 }
 
@@ -91,6 +91,17 @@ function calculate_speeds() {
   echo "$total_speed $download_speed $upload_speed"
 }
 
+function calculate_average_speed() {
+  duration=$1
+  total_data=$2
+
+  # Calcula a velocidade média
+  avg_speed=$(echo "scale=2; $total_data / $duration" | bc -l)
+
+  echo "$avg_speed"
+}
+
+
 # Intervalo de tempo entre as atualizações (em segundos)
 interval=5
 
@@ -162,8 +173,31 @@ print_operator_info() {
   echo "----------------------------"
 }
 
+# Função para calcular as velocidades médias
+calculate_average_speeds() {
+  local duration="$1"
+  local data_total="$2"
+  local data_download="$3"
+  local data_upload="$4"
+
+  average_speed=$(calculate_average_speed "$duration" "$data_total")
+  average_speed_formatted=$(format_bytes "$average_speed")
+  average_speed_mbps=$(format_mbps "$average_speed")
+
+  average_download_speed=$(calculate_average_speed "$duration" "$data_download")
+  average_download_speed_formatted=$(format_bytes "$average_download_speed")
+  average_download_speed_mbps=$(format_mbps "$average_download_speed")
+
+  average_upload_speed=$(calculate_average_speed "$duration" "$data_upload")
+  average_upload_speed_formatted=$(format_bytes "$average_upload_speed")
+  average_upload_speed_mbps=$(format_mbps "$average_upload_speed")
+}
+
 # Função para imprimir informações de conexão
 print_connection_info() {
+  # Chama a função calculate_average_speeds
+  calculate_average_speeds "$sess_duration" "$data_transferred" "$data_transferred_rx" "$data_transferred_tx"
+
   echo "---- Conexão ---------------"
   echo "GW: $gateway."
   echo "LI: $local_ip."
@@ -174,12 +208,15 @@ print_connection_info() {
   echo "Dados total: $(format_bytes "$data_transferred")."
   echo "Download total: $(format_bytes "$data_transferred_rx")."
   echo "Upload total: $(format_bytes "$data_transferred_tx")."
+  echo "Velocidade média total: $average_speed_formatted/s. $average_speed_mbps."
+  echo "Velocidade média de download: $average_download_speed_formatted/s. $average_download_speed_mbps."
+  echo "Velocidade média de upload: $average_upload_speed_formatted/s. $average_upload_speed_mbps."
   echo "----------------------------"
 }
 
 # Função para imprimir informações de velocidade de conexão
 print_speed_info() {
-  echo "---- Velocidade Conexão ----"
+  echo "---- Velocidade Conexão dos últimos ${interval}s ----"
   echo "Total: $total_speed_formatted/s. $total_speed_mbps."
   echo "Download: $download_speed_formatted/s. $download_speed_mbps."
   echo "Upload: $upload_speed_formatted/s. $upload_speed_mbps."
