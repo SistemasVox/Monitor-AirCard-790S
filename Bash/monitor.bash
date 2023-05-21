@@ -6,8 +6,13 @@
 
 # Funções para formatar as informações
 format_datetime() {
-  date -d "@$1" +"%I:%M:%S %p"
+  if [ -n "$1" ]; then
+    date -d "@$1" +"%I:%M:%S %p"
+  else
+    echo "Data e hora não disponíveis"
+  fi
 }
+
 
 format_temperature() {
   printf "%.1f°C" "$1"
@@ -15,7 +20,10 @@ format_temperature() {
 
 format_voltage() {
   voltage=$(echo "scale=4; $1 / 1000" | bc -l)
-  printf "%.2fV" "$voltage"
+  voltage=$(echo "$voltage")
+  printf "%0.2fV" "$voltage"
+  # voltage=$(echo "$voltage" | tr '.' ',')
+  # LC_NUMERIC="pt_BR.UTF-8" printf "%0.2fV" "$voltage" | tr ',' '.'
 }
 
 format_battery() {
@@ -23,15 +31,24 @@ format_battery() {
 }
 
 format_duration() {
-  printf "%02dh %02dm %02ds" $(($1/3600)) $(($1%3600/60)) $(($1%60))
+  if [ -z "$1" ] || [ "$1" -eq 0 ]; then
+    echo "00h 00m 00s"
+  else
+    printf "%02dh %02dm %02ds" $(($1/3600)) $(($1%3600/60)) $(($1%60))
+  fi
 }
 
 format_bytes() {
-  numfmt --to=iec-i --suffix=B --padding=7 "$1"
+  if [ -n "$1" ]; then
+    numfmt --to=iec-i --suffix=B --padding=7 "$1"
+  else
+    echo "Valor de bytes não disponível"
+  fi
 }
 
+
 # Função para fazer requisições GET
-function fetch_data() {
+fetch_data() {
   random_x=$((10000 + RANDOM % 99999))
   url="http://192.168.1.1/api/model.json?internalapi=1&x=$random_x"
   response=$(curl -s -L "$url")
@@ -44,27 +61,33 @@ function fetch_data() {
 }
 
 # Função para formatar bytes
-function format_bytes() {
-  value=$1
-  units=("B" "KB" "MB" "GB" "TB")
-  for unit in "${units[@]}"; do
-    if (( $(echo "$value < 1024" | bc -l) )); then
-      break
-    fi
-    value=$(echo "scale=2; $value / 1024" | bc)
-  done
-  echo "${value} ${unit}"
+format_bytes() {
+  if [ -n "$1" ]; then
+    value=$1
+    units=("B" "KB" "MB" "GB" "TB")
+    for unit in "${units[@]}"; do
+      if (( $(echo "$value < 1024" | bc -l) )); then
+        break
+      fi
+      value=$(echo "scale=2; $value / 1024" | bc)
+    done
+    echo "${value} ${unit}"
+  else
+    echo "Valor de bytes não disponível"
+  fi
 }
 
 # Função para formatar bytes por segundo para Mbps
-function format_mbps() {
+format_mbps() {
   value=$1
   value=$(echo "scale=2; $value * 8 / 1000000" | bc)
-  printf "%.2f Mbps\n" ${value:-0}
+  printf "%0.2f Mbps\n" "${value:-0}"
+  # value=$(echo "$value" | tr '.' ',')
+  # LC_NUMERIC="pt_BR.UTF-8" printf "%0.2f Mbps\n" ${value:-0} | tr ',' '.'
 }
 
 # Função para calcular velocidades de conexão
-function calculate_speeds() {
+calculate_speeds() {
   curr_time=$1
   prev_time=$2
   curr_data_transferred=$3
@@ -82,7 +105,7 @@ function calculate_speeds() {
   upload_speed=0
 
   # Calcula as velocidades se o tempo anterior e a quantidade anterior estiverem definidos
-  if [[ -n "$prev_data_transferred" && -n "$prev_time" ]]; then
+  if [[ -n "$prev_data_transferred" && -n "$prev_time" && $time_diff -ne 0 ]]; then
     total_speed=$(echo "scale=2; ($curr_data_transferred - $prev_data_transferred) / $time_diff" | bc -l)
     download_speed=$(echo "scale=2; ($curr_data_transferred_rx - $prev_data_transferred_rx) / $time_diff" | bc -l)
     upload_speed=$(echo "scale=2; ($curr_data_transferred_tx - $prev_data_transferred_tx) / $time_diff" | bc -l)
@@ -96,11 +119,12 @@ function calculate_average_speed() {
   total_data=$2
 
   # Calcula a velocidade média
-  avg_speed=$(echo "scale=2; $total_data / $duration" | bc -l)
+  if [[ -n "$duration" && $duration -ne 0 ]]; then
+    avg_speed=$(echo "scale=2; $total_data / $duration" | bc -l)
+  fi
 
   echo "$avg_speed"
 }
-
 
 # Intervalo de tempo entre as atualizações (em segundos)
 interval=5
@@ -134,7 +158,6 @@ local_ip=$(get_local_ip)
 gateway=$(get_gateway)
 public_ip=$(get_public_ip)
 
-
 # Função para imprimir informações do dispositivo
 print_device_info() {
   echo "---- Dispositivo -----------"
@@ -159,18 +182,87 @@ print_battery_info() {
 
 # Função para imprimir informações da operadora
 print_operator_info() {
-  echo "---- Operadora -------------"
-  echo "Conexão: $connection_text."
-  echo "Tipo de Conexão: $current_ps_service_type."
+  echo "------- Torre -------------"
   echo "Banda: $cur_band"
-  echo "Barras: $bars."
-  echo "RSRP: $rsrp dBm."
-  echo "RSRQ: $rsrq dB."
-  echo "SINR: $sinr dB."
-  echo "Operadora: $register_network_display."
-  echo "Torre: $cell_id."
   echo "radioQuality: $radio_quality dBm."
+  echo "Rede: $operadora."
+  print_bars_info
+  echo "Torre: $cell_id."
+  echo "LAC: $LAC."
+  echo "MCC: $MCC."
+  echo "MNC: $MNC."
+  print_rsrp_info
+  print_rsrq_info
+  print_sinr_info
+  print_qualidade_sinal
   echo "----------------------------"
+}
+
+print_bars_info() {
+  if [ "$bars" -eq 0 ]; then
+    echo "Barras: Sem sinal."
+  elif [ "$bars" -eq 1 ]; then
+    echo "Barras: $bars (sinal muito fraco)."
+  elif [ "$bars" -eq 2 ]; then
+    echo "Barras: $bars (sinal fraco)."
+  elif [ "$bars" -eq 3 ]; then
+    echo "Barras: $bars (sinal moderado.)"
+  elif [ "$bars" -eq 4 ]; then
+    echo "Barras: $bars (sinal bom)."
+  elif [ "$bars" -eq 5 ]; then
+    echo "Barras: $bars (sinal excelente)."
+  else
+    echo "Barras: Valor inválido."
+  fi
+}
+
+# print_rsrp_info() {
+  # if [ "$rsrp" -gt -65 ]; then
+    # echo "RSRP: $rsrp dBm (sinal excelente)."
+  # elif [ "$rsrp" -gt -75 ]; then
+    # echo "RSRP: $rsrp dBm (sinal bom)."
+  # elif [ "$rsrp" -gt -85 ]; then
+    # echo "RSRP: $rsrp dBm (sinal médio)."
+  # elif [ "$rsrp" -gt -95 ]; then
+    # echo "RSRP: $rsrp dBm (sinal fraco)."
+  # else
+    # echo "RSRP: $rsrp dBm (sem sinal)."
+  # fi
+# }
+
+print_rsrp_info() {
+  if [ "$rsrp" -ge -80 ]; then
+    echo "RSRP: $rsrp dBm (sinal excelente)."
+  elif [ "$rsrp" -ge -90 ]; then
+    echo "RSRP: $rsrp dBm (sinal bom)."
+  elif [ "$rsrp" -ge -100 ]; then
+    echo "RSRP: $rsrp dBm (sinal regular a fraco)."
+  else
+    echo "RSRP: $rsrp dBm (sem sinal)."
+  fi
+}
+print_rsrq_info() {
+  if [ "$rsrq" -gt -10 ]; then
+    echo "RSRQ: $rsrq dB (sinal excelente)."
+  elif [ "$rsrq" -gt -15 ]; then
+    echo "RSRQ: $rsrq dB (sinal bom)."
+  elif [ "$rsrq" -gt -20 ]; then
+    echo "RSRQ: $rsrq dB (sinal ruim)."
+  else
+    echo "RSRQ: $rsrq dB (sinal fraco)."
+  fi
+}
+
+print_sinr_info() {
+  if [ "$sinr" -ge 20 ]; then
+    echo "SINR: $sinr dB (sinal excelente)."
+  elif [ "$sinr" -ge 13 ]; then
+    echo "SINR: $sinr dB (sinal bom)."
+  elif [ "$sinr" -ge 0 ]; then
+    echo "SINR: $sinr dB (sinal ruim)."
+  else
+    echo "SINR: $sinr dB (sinal fraco)."
+  fi
 }
 
 # Função para calcular as velocidades médias
@@ -179,7 +271,7 @@ calculate_average_speeds() {
   local data_total="$2"
   local data_download="$3"
   local data_upload="$4"
-  
+
   # Verifica se os campos necessários estão presentes e não são nulos
   if [ "$duration" != "null" ] && [ "$data_total" != "null" ] && [ "$data_download" != "null" ] && [ "$data_upload" != "null" ]; then
     average_speed=$(calculate_average_speed "$duration" "$data_total")
@@ -214,24 +306,28 @@ print_connection_info() {
   calculate_average_speeds "$sess_duration" "$data_transferred" "$data_transferred_rx" "$data_transferred_tx"
 
   echo "---- Conexão ---------------"
+  echo "Conexão: $connection_text."
+  echo "Tipo de Conexão: $current_ps_service_type."
+  echo "Operadora: $register_network_display."
   echo "GW: $gateway."
   echo "LI: $local_ip."
   echo "GW: $cg."
   echo "IP: $public_ip."
+  echo "-------- Sessão -----------"
   echo "Duração: $(format_duration "$sess_duration")."
   echo "Início: $(format_datetime "$sess_start_time")."
   echo "Dados total: $(format_bytes "$data_transferred")."
   echo "Download total: $(format_bytes "$data_transferred_rx")."
   echo "Upload total: $(format_bytes "$data_transferred_tx")."
-  echo "Velocidade média total: $average_speed_formatted/s. $average_speed_mbps."
-  echo "Velocidade média de download: $average_download_speed_formatted/s. $average_download_speed_mbps."
-  echo "Velocidade média de upload: $average_upload_speed_formatted/s. $average_upload_speed_mbps."
+  echo "FULL: $average_speed_formatted/s. $average_speed_mbps."
+  echo "UP: $average_download_speed_formatted/s. $average_download_speed_mbps."
+  echo "Down: $average_upload_speed_formatted/s. $average_upload_speed_mbps."
   echo "----------------------------"
 }
 
 # Função para imprimir informações de velocidade de conexão
 print_speed_info() {
-  echo "---- Velocidade Conexão dos últimos ${interval}s ----"
+  echo "---- Velocidade ----"
   echo "Total: $total_speed_formatted/s. $total_speed_mbps."
   echo "Download: $download_speed_formatted/s. $download_speed_mbps."
   echo "Upload: $upload_speed_formatted/s. $upload_speed_mbps."
@@ -239,7 +335,7 @@ print_speed_info() {
 }
 
 # Função para extrair informações do JSON
-function extract_info() {
+extract_info() {
   local json="$1"
 
   device_name=$(echo "$json" | jq -r '.general.deviceName')
@@ -259,11 +355,17 @@ function extract_info() {
   cur_band=$(echo "$json" | jq -r '.wwanadv.curBand')
   bars=$(echo "$json" | jq -r '.wwan.signalStrength.bars // "N/A"')
   rsrp=$(echo "$json" | jq -r '.wwan.signalStrength.rsrp // "N/A"')
+  rssi=$(echo "$json" | jq -r '.wwan.signalStrength.rssi // "N/A"')
   rsrq=$(echo "$json" | jq -r '.wwan.signalStrength.rsrq // "N/A"')
-  sinr=$(echo "$json" | jq -r '.wwan.signalStrength.sinr // "N/A"')
+  sinr=$(echo "$json" | jq -r '.wwan.signalStrength.sinr // "N/A"')  
+  
   register_network_display=$(echo "$json" | jq -r '.wwan.registerNetworkDisplay // "N/A"')
   cell_id=$(echo "$json" | jq -r '.wwanadv.cellId // "N/A"')
   radio_quality=$(echo "$json" | jq -r '.wwanadv.radioQuality // "N/A"')
+  LAC=$(echo "$json" | jq -r '.wwanadv.LAC // "N/A"')
+  MCC=$(echo "$json" | jq -r '.wwanadv.MCC // "N/A"')
+  MNC=$(echo "$json" | jq -r '.wwanadv.MNC // "N/A"')
+  operadora=$(map_mnc_to_operadora "$MNC")
 
   cg=$(echo "$json" | jq -r '.wwan.IP // "N/A"')
   sess_duration=$(echo "$json" | jq -r '.wwan.sessDuration')
@@ -273,8 +375,89 @@ function extract_info() {
   data_transferred_tx=$(echo "$json" | jq -r '.wwan.dataTransferredTx')
 }
 
+map_mnc_to_operadora() {
+  case "$1" in
+    "00")
+      echo "Nextel"
+      ;;
+    "02" | "03" | "04")
+      echo "TIM"
+      ;;
+    "05")
+      echo "Claro"
+      ;;
+    "06" | "10" | "11" | "12")
+      echo "Vivo"
+      ;;
+    "15")
+      echo "Sercomtel"
+      ;;
+    "16")
+      echo "Brasil Telecom GSM"
+      ;;
+    "17")
+      echo "Surf Telecom"
+      ;;
+    "18")
+      echo "datora"
+      ;;
+    "21")
+      echo "LIGUE"
+      ;;
+    "23")
+      echo "Vivo"
+      ;;
+    "28")
+      echo "No name"
+      ;;
+    "29")
+      echo "Unifique"
+      ;;
+    "30" | "31")
+      echo "Oi"
+      ;;
+    "32" | "33" | "34")
+      echo "Algar Telecom"
+      ;;
+    "38")
+      echo "Claro"
+      ;;
+    "39")
+      echo "Nextel"
+      ;;
+    "54")
+      echo "Conecta"
+      ;;
+    "99")
+      echo "Local"
+      ;;
+    *)
+      echo "N/A"
+      ;;
+  esac
+}
+
+print_qualidade_sinal() {
+  if [ "$rssi" != "N/A" ] && [ "$sinr" != "N/A" ] && [ "$rsrp" != "N/A" ] && [ "$rsrq" != "N/A" ]; then
+    if [ "$rssi" -ge -65 ] && [ "$sinr" -ge 20 ] && [ "$rsrp" -ge -80 ] && [ "$rsrq" -ge -10 ]; then
+      echo "Qualidade total: Excelente!"
+    elif [ "$rssi" -ge -75 ] && [ "$sinr" -ge 13 ] && [ "$rsrp" -ge -90 ] && [ "$rsrq" -ge -15 ]; then
+      echo "Qualidade total: Bom!"
+    elif [ "$rssi" -ge -85 ] && [ "$sinr" -ge 0 ] && [ "$rsrp" -ge -100 ] && [ "$rsrq" -ge -20 ]; then
+      echo "Qualidade total: Médio!"
+    elif [ "$rssi" -ge -95 ] && [ "$sinr" -ge 0 ] && [ "$rsrp" -ge -100 ] && [ "$rsrq" -ge -20 ]; then
+      echo "Qualidade total: Fraco!"
+    else
+      echo "Sem sinal!"
+    fi
+  else
+    echo "Não foi possível obter a qualidade do sinal!"
+  fi
+}
+
+
 # Função para calcular e formatar as velocidades
-function calculate_and_format_speeds() {
+calculate_and_format_speeds() {
   local curr_time="$1"
   local prev_time="$2"
   local json="$3"
@@ -299,7 +482,6 @@ function calculate_and_format_speeds() {
   upload_speed_mbps=$(format_mbps "$upload_speed")
 }
 
-
 # Define o intervalo em segundos entre cada atualização
 interval=5
 
@@ -310,25 +492,89 @@ while true; do
 
   # Extrai as informações relevantes usando a função extract_info
   extract_info "$json"
-  
+
   # Exibe as informações formatadas
   clear
   print_device_info
   print_battery_info
   print_operator_info
   print_connection_info
-  
-    # Calcula e imprime as velocidades, se prev_data e prev_time estão definidos
-    if [[ -n "$prev_data" && -n "$prev_time" ]]; then
-		calculate_and_format_speeds "$curr_time" "$prev_time" "$json" "$prev_data"
-		# Imprime as velocidades formatadas
-		print_speed_info
-    fi
 
-    # Define prev_data e prev_time para a próxima iteração
-    prev_data="$json"
-    prev_time="$curr_time"
+  # Calcula e imprime as velocidades, se prev_data e prev_time estão definidos
+  if [[ -n "$prev_data" && -n "$prev_time" ]]; then
+    calculate_and_format_speeds "$curr_time" "$prev_time" "$json" "$prev_data"
+    # Imprime as velocidades formatadas
+    print_speed_info
+  fi
+
+  # Define prev_data e prev_time para a próxima iteração
+  prev_data="$json"
+  prev_time="$curr_time"
 
   # Aguarda o intervalo especificado antes de atualizar as informações
   sleep $interval
 done
+
+
+# operadora.txt
+# 02:TIM
+# 05:Claro
+# 23:VIVO
+# 31:Oi
+# 34:Algar Telecom
+# 99:Local
+
+# operadora=$(grep -E "^$MNC:" operadora.txt | cut -d ':' -f 2)
+
+# if [ -z "$operadora" ]; then
+  # operadora="N/A"
+# fi
+
+# --- Segundo exemplo de uso ----
+# operadora.txt:
+# 0,Nextel
+# 2,TIM
+# 3,TIM
+# 4,TIM
+# 5,Claro
+# 6,Vivo
+# 10,Vivo
+# 11,Vivo
+# 12,Claro
+# 15,Sercomtel
+# 16,Brasil Telecom GSM
+# 17,Surf Telecom
+# 18,datora
+# 21,LIGUE
+# 23,Vivo
+# 24,
+# 28,No name
+# 29,Unifique
+# 30,Oi
+# 31,Oi
+# 32,Algar Telecom
+# 33,Algar Telecom
+# 34,Algar Telecom
+# 35,
+# 36,
+# 37,aeiou
+# 38,Claro
+# 39,Nextel
+# 54,Conecta
+# 99,Local
+
+
+# map_mnc_to_operadora() {
+  # local mnc=$1
+  # local operadora="N/A"
+
+#  Lê o arquivo operadora.txt linha por linha
+  # while IFS=, read -r code name; do
+    # if [ "$mnc" = "$code" ]; then
+      # operadora="$name"
+      # break
+    # fi
+  # done < operadora.txt
+
+  # echo "$operadora"
+# }
