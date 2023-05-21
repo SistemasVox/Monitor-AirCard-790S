@@ -150,7 +150,12 @@ function get_gateway() {
 # Função para obter o IP público
 function get_public_ip() {
   public_ip=$(curl -s https://api.ipify.org)
-  echo "$public_ip"
+
+  if [ -n "$public_ip" ]; then
+    echo "$public_ip"
+  else
+    echo "0.0.0.0"
+  fi
 }
 
 # Obtendo informações de IP
@@ -183,9 +188,9 @@ print_battery_info() {
 # Função para imprimir informações da operadora
 print_operator_info() {
   echo "------- Torre -------------"
-  echo "Banda: $cur_band"
-  echo "radioQuality: $radio_quality dBm."
   echo "Rede: $operadora."
+  print_band_info
+  echo "radioQuality: $radio_quality dBm."
   print_bars_info
   echo "Torre: $cell_id."
   echo "LAC: $LAC."
@@ -198,15 +203,124 @@ print_operator_info() {
   echo "----------------------------"
 }
 
+print_band_info() {
+  if [ -n "$cur_band" ]; then
+    if [[ "$cur_band" != *"LTE"* ]]; then
+      echo "Banda: $cur_band."
+    else
+      trimmed_band="${cur_band#"LTE "}"  # Remover "LTE " do início da string
+
+      case $trimmed_band in
+        "B1")
+          echo "Banda: $cur_band (2100 MHz)."
+          ;;
+        "B2")
+          echo "Banda: $cur_band (1900 MHz)."
+          ;;
+        "B3")
+          echo "Banda: $cur_band (1800 MHz)."
+          ;;
+        "B4")
+          echo "Banda: $cur_band (1700 MHz)."
+          ;;
+        "B5" | "B6" | "B26" | "B27")
+          echo "Banda: $cur_band (850 MHz)."
+          ;;
+        "B7" | "B65")
+          echo "Banda: $cur_band (2600 MHz)."
+          ;;
+        "B8" | "B18" | "B19")
+          echo "Banda: $cur_band (900 MHz)."
+          ;;
+        "B9" | "B21")
+          echo "Banda: $cur_band (1800 MHz)."
+          ;;
+        "B10" | "B11" | "B71")
+          echo "Banda: $cur_band (1500 MHz)."
+          ;;
+        "B12" | "B13" | "B14" | "B17" | "B28" | "B29" | "B67" | "B68" | "B85")
+          echo "Banda: $cur_band (700 MHz)."
+          ;;
+        "B15" | "B26" | "B30" | "B32" | "B66" | "B70" | "B74")
+          echo "Banda: $cur_band (800 MHz)."
+          ;;
+        "B20")
+          echo "Banda: $cur_band (800 MHz)."
+          ;;
+        "B22")
+          echo "Banda: $cur_band (3500 MHz)."
+          ;;
+        "B23")
+          echo "Banda: $cur_band (2000 MHz)."
+          ;;
+        "B24")
+          echo "Banda: $cur_band (1600 MHz)."
+          ;;
+        "B25")
+          echo "Banda: $cur_band (1900 MHz)."
+          ;;
+        "B31" | "B72" | "B73")
+          echo "Banda: $cur_band (450 MHz)."
+          ;;
+        "B252" | "B255")
+          echo "Banda: $cur_band (Suppl. DL)."
+          ;;
+        *)
+          echo "Banda: $cur_band (Frequência desconhecida)."
+          ;;
+      esac
+    fi
+  else
+    echo "Banda não disponível!"
+  fi
+}
+
+
+print_umts_band_info() {
+  if [ -n "$cur_umts_band" ]; then
+    case "$cur_umts_band" in
+      "B1")
+        echo "Banda UMTS: $cur_umts_band (2100 MHz)"
+        ;;
+      "B8")
+        echo "Banda UMTS: $cur_umts_band (900 MHz)"
+        ;;
+      "B5")
+        echo "Banda UMTS: $cur_umts_band (850 MHz)"
+        ;;
+      "B2")
+        echo "Banda UMTS: $cur_umts_band (1900 MHz)"
+        ;;
+      "B4")
+        echo "Banda UMTS: $cur_umts_band (1700 MHz)"
+        ;;
+      "B20")
+        echo "Banda UMTS: $cur_umts_band (800 MHz)"
+        ;;
+      "B34")
+        echo "Banda UMTS: $cur_umts_band (2100 MHz)"
+        ;;
+      *)
+        echo "Banda UMTS: $cur_umts_band (Frequência desconhecida)"
+        ;;
+    esac
+  else
+    echo "Banda UMTS não disponível"
+  fi
+}
+
+
 print_bars_info() {
-  if [ "$bars" -eq 0 ]; then
+  if [ -z "$bars" ]; then
+    echo "Barras: Valor nulo."
+  elif [ "$bars" -eq 0 ]; then
     echo "Barras: Sem sinal."
   elif [ "$bars" -eq 1 ]; then
     echo "Barras: $bars (sinal muito fraco)."
   elif [ "$bars" -eq 2 ]; then
     echo "Barras: $bars (sinal fraco)."
   elif [ "$bars" -eq 3 ]; then
-    echo "Barras: $bars (sinal moderado.)"
+    echo "Barras: $bars (sinal moderado)."
   elif [ "$bars" -eq 4 ]; then
     echo "Barras: $bars (sinal bom)."
   elif [ "$bars" -eq 5 ]; then
@@ -215,6 +329,49 @@ print_bars_info() {
     echo "Barras: Valor inválido."
   fi
 }
+
+print_rsrp_info() {
+  if [ -z "$rsrp" ]; then
+    echo "RSRP: Valor nulo."
+  elif [ "$rsrp" -ge -80 ]; then
+    echo "RSRP: $rsrp dBm (sinal excelente)."
+  elif [ "$rsrp" -ge -90 ]; then
+    echo "RSRP: $rsrp dBm (sinal bom)."
+  elif [ "$rsrp" -ge -100 ]; then
+    echo "RSRP: $rsrp dBm (sinal regular a fraco)."
+  else
+    echo "RSRP: $rsrp dBm (sem sinal)."
+  fi
+}
+
+print_rsrq_info() {
+  if [ -z "$rsrq" ]; then
+    echo "RSRQ: Valor nulo."
+  elif [ "$rsrq" -gt -10 ]; then
+    echo "RSRQ: $rsrq dB (sinal excelente)."
+  elif [ "$rsrq" -gt -15 ]; then
+    echo "RSRQ: $rsrq dB (sinal bom)."
+  elif [ "$rsrq" -gt -20 ]; then
+    echo "RSRQ: $rsrq dB (sinal ruim)."
+  else
+    echo "RSRQ: $rsrq dB (sinal fraco)."
+  fi
+}
+
+print_sinr_info() {
+  if [ -z "$sinr" ]; then
+    echo "SINR: Valor nulo."
+  elif [ "$sinr" -ge 20 ]; then
+    echo "SINR: $sinr dB (sinal excelente)."
+  elif [ "$sinr" -ge 13 ]; then
+    echo "SINR: $sinr dB (sinal bom)."
+  elif [ "$sinr" -ge 0 ]; then
+    echo "SINR: $sinr dB (sinal ruim)."
+  else
+    echo "SINR: $sinr dB (sinal fraco)."
+  fi
+}
+
 
 # print_rsrp_info() {
   # if [ "$rsrp" -gt -65 ]; then
@@ -230,40 +387,6 @@ print_bars_info() {
   # fi
 # }
 
-print_rsrp_info() {
-  if [ "$rsrp" -ge -80 ]; then
-    echo "RSRP: $rsrp dBm (sinal excelente)."
-  elif [ "$rsrp" -ge -90 ]; then
-    echo "RSRP: $rsrp dBm (sinal bom)."
-  elif [ "$rsrp" -ge -100 ]; then
-    echo "RSRP: $rsrp dBm (sinal regular a fraco)."
-  else
-    echo "RSRP: $rsrp dBm (sem sinal)."
-  fi
-}
-print_rsrq_info() {
-  if [ "$rsrq" -gt -10 ]; then
-    echo "RSRQ: $rsrq dB (sinal excelente)."
-  elif [ "$rsrq" -gt -15 ]; then
-    echo "RSRQ: $rsrq dB (sinal bom)."
-  elif [ "$rsrq" -gt -20 ]; then
-    echo "RSRQ: $rsrq dB (sinal ruim)."
-  else
-    echo "RSRQ: $rsrq dB (sinal fraco)."
-  fi
-}
-
-print_sinr_info() {
-  if [ "$sinr" -ge 20 ]; then
-    echo "SINR: $sinr dB (sinal excelente)."
-  elif [ "$sinr" -ge 13 ]; then
-    echo "SINR: $sinr dB (sinal bom)."
-  elif [ "$sinr" -ge 0 ]; then
-    echo "SINR: $sinr dB (sinal ruim)."
-  else
-    echo "SINR: $sinr dB (sinal fraco)."
-  fi
-}
 
 # Função para calcular as velocidades médias
 calculate_average_speeds() {
@@ -338,42 +461,76 @@ print_speed_info() {
 extract_info() {
   local json="$1"
 
-  device_name=$(echo "$json" | jq -r '.general.deviceName')
-  curr_time=$(echo "$json" | jq -r '.general.currTime')
-  dev_temperature=$(echo "$json" | jq -r '.general.devTemperature')
-  ver_major=$(echo "$json" | jq -r '.general.verMajor')
+  device_name=$(echo "$json" | jq -r '.general.deviceName' 2>/dev/null)
+  curr_time=$(echo "$json" | jq -r '.general.currTime' 2>/dev/null)
+  dev_temperature=$(echo "$json" | jq -r '.general.devTemperature' 2>/dev/null)
+  ver_major=$(echo "$json" | jq -r '.general.verMajor' 2>/dev/null)
 
-  pm_state=$(echo "$json" | jq -r '.power.PMState // "N/A"')
-  battery_temperature=$(echo "$json" | jq -r '.power.batteryTemperature')
-  battery_voltage=$(echo "$json" | jq -r '.power.batteryVoltage')
-  batt_charge_level=$(echo "$json" | jq -r '.power.battChargeLevel')
-  batt_charge_source=$(echo "$json" | jq -r '.power.battChargeSource // "N/A"')
-  battery_state=$(echo "$json" | jq -r '.power.batteryState // "N/A"')
+  pm_state=$(echo "$json" | jq -r '.power.PMState // null' 2>/dev/null)
+  battery_temperature=$(echo "$json" | jq -r '.power.batteryTemperature' 2>/dev/null)
+  battery_voltage=$(echo "$json" | jq -r '.power.batteryVoltage' 2>/dev/null)
+  batt_charge_level=$(echo "$json" | jq -r '.power.battChargeLevel' 2>/dev/null)
+  batt_charge_source=$(echo "$json" | jq -r '.power.battChargeSource // null' 2>/dev/null)
+  battery_state=$(echo "$json" | jq -r '.power.batteryState // null' 2>/dev/null)
 
-  connection_text=$(echo "$json" | jq -r '.wwan.connectionText')
-  current_ps_service_type=$(echo "$json" | jq -r '.wwan.currentPSserviceType')
-  cur_band=$(echo "$json" | jq -r '.wwanadv.curBand')
-  bars=$(echo "$json" | jq -r '.wwan.signalStrength.bars // "N/A"')
-  rsrp=$(echo "$json" | jq -r '.wwan.signalStrength.rsrp // "N/A"')
-  rssi=$(echo "$json" | jq -r '.wwan.signalStrength.rssi // "N/A"')
-  rsrq=$(echo "$json" | jq -r '.wwan.signalStrength.rsrq // "N/A"')
-  sinr=$(echo "$json" | jq -r '.wwan.signalStrength.sinr // "N/A"')  
-  
-  register_network_display=$(echo "$json" | jq -r '.wwan.registerNetworkDisplay // "N/A"')
-  cell_id=$(echo "$json" | jq -r '.wwanadv.cellId // "N/A"')
-  radio_quality=$(echo "$json" | jq -r '.wwanadv.radioQuality // "N/A"')
-  LAC=$(echo "$json" | jq -r '.wwanadv.LAC // "N/A"')
-  MCC=$(echo "$json" | jq -r '.wwanadv.MCC // "N/A"')
-  MNC=$(echo "$json" | jq -r '.wwanadv.MNC // "N/A"')
+  connection_text=$(echo "$json" | jq -r '.wwan.connectionText' 2>/dev/null)
+  current_ps_service_type=$(echo "$json" | jq -r '.wwan.currentPSserviceType' 2>/dev/null)
+  cur_band=$(echo "$json" | jq -r '.wwanadv.curBand' 2>/dev/null)
+  bars=$(echo "$json" | jq -r '.wwan.signalStrength.bars // null' 2>/dev/null)
+  rsrp=$(echo "$json" | jq -r '.wwan.signalStrength.rsrp // null' 2>/dev/null)
+  rssi=$(echo "$json" | jq -r '.wwan.signalStrength.rssi // null' 2>/dev/null)
+  rsrq=$(echo "$json" | jq -r '.wwan.signalStrength.rsrq // null' 2>/dev/null)
+  sinr=$(echo "$json" | jq -r '.wwan.signalStrength.sinr // null' 2>/dev/null)
+
+  register_network_display=$(echo "$json" | jq -r '.wwan.registerNetworkDisplay // null' 2>/dev/null)
+  cell_id=$(echo "$json" | jq -r '.wwanadv.cellId // null' 2>/dev/null)
+  radio_quality=$(echo "$json" | jq -r '.wwanadv.radioQuality // null' 2>/dev/null)
+  LAC=$(echo "$json" | jq -r '.wwanadv.LAC // null' 2>/dev/null)
+  MCC=$(echo "$json" | jq -r '.wwanadv.MCC // null' 2>/dev/null)
+  MNC=$(echo "$json" | jq -r '.wwanadv.MNC // null' 2>/dev/null)
   operadora=$(map_mnc_to_operadora "$MNC")
 
-  cg=$(echo "$json" | jq -r '.wwan.IP // "N/A"')
-  sess_duration=$(echo "$json" | jq -r '.wwan.sessDuration')
-  sess_start_time=$(echo "$json" | jq -r '.wwan.sessStartTime')
-  data_transferred=$(echo "$json" | jq -r '.wwan.dataTransferred')
-  data_transferred_rx=$(echo "$json" | jq -r '.wwan.dataTransferredRx')
-  data_transferred_tx=$(echo "$json" | jq -r '.wwan.dataTransferredTx')
+  cg=$(echo "$json" | jq -r '.wwan.IP // null' 2>/dev/null)
+  sess_duration=$(echo "$json" | jq -r '.wwan.sessDuration' 2>/dev/null)
+  sess_start_time=$(echo "$json" | jq -r '.wwan.sessStartTime' 2>/dev/null)
+  data_transferred=$(echo "$json" | jq -r '.wwan.dataTransferred' 2>/dev/null)
+  data_transferred_rx=$(echo "$json" | jq -r '.wwan.dataTransferredRx' 2>/dev/null)
+  data_transferred_tx=$(echo "$json" | jq -r '.wwan.dataTransferredTx' 2>/dev/null)
+
+  # Atribuir valores padrão null caso ocorra erro na extração do JSON
+  device_name=${device_name:-null}
+  curr_time=${curr_time:-null}
+  dev_temperature=${dev_temperature:-null}
+  ver_major=${ver_major:-null}
+  pm_state=${pm_state:-null}
+  battery_temperature=${battery_temperature:-null}
+  battery_voltage=${battery_voltage:-null}
+  batt_charge_level=${batt_charge_level:-null}
+  batt_charge_source=${batt_charge_source:-null}
+  battery_state=${battery_state:-null}
+  connection_text=${connection_text:-null}
+  current_ps_service_type=${current_ps_service_type:-null}
+  cur_band=${cur_band:-null}
+  bars=${bars:-null}
+  rsrp=${rsrp:-null}
+  rssi=${rssi:-null}
+  rsrq=${rsrq:-null}
+  sinr=${sinr:-null}
+  register_network_display=${register_network_display:-null}
+  cell_id=${cell_id:-null}
+  radio_quality=${radio_quality:-null}
+  LAC=${LAC:-null}
+  MCC=${MCC:-null}
+  MNC=${MNC:-null}
+  operadora=${operadora:-null}
+  cg=${cg:-null}
+  sess_duration=${sess_duration:-null}
+  sess_start_time=${sess_start_time:-null}
+  data_transferred=${data_transferred:-null}
+  data_transferred_rx=${data_transferred_rx:-null}
+  data_transferred_tx=${data_transferred_tx:-null}
 }
+
 
 map_mnc_to_operadora() {
   case "$1" in
@@ -432,13 +589,13 @@ map_mnc_to_operadora() {
       echo "Local"
       ;;
     *)
-      echo "N/A"
+      echo "N/A - $1"
       ;;
   esac
 }
 
 print_qualidade_sinal() {
-  if [ "$rssi" != "N/A" ] && [ "$sinr" != "N/A" ] && [ "$rsrp" != "N/A" ] && [ "$rsrq" != "N/A" ]; then
+  if [ -n "$rssi" ] && [ -n "$sinr" ] && [ -n "$rsrp" ] && [ -n "$rsrq" ]; then
     if [ "$rssi" -ge -65 ] && [ "$sinr" -ge 20 ] && [ "$rsrp" -ge -80 ] && [ "$rsrq" -ge -10 ]; then
       echo "Qualidade total: Excelente!"
     elif [ "$rssi" -ge -75 ] && [ "$sinr" -ge 13 ] && [ "$rsrp" -ge -90 ] && [ "$rsrq" -ge -15 ]; then
@@ -454,7 +611,6 @@ print_qualidade_sinal() {
     echo "Não foi possível obter a qualidade do sinal!"
   fi
 }
-
 
 # Função para calcular e formatar as velocidades
 calculate_and_format_speeds() {
