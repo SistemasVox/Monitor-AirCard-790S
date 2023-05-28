@@ -153,6 +153,7 @@ function get_public_ip() {
 
   if [ -n "$public_ip" ]; then
     echo "$public_ip"
+	prev_cg="$cg"
   else
     echo "0.0.0.0"
   fi
@@ -185,6 +186,32 @@ print_battery_info() {
   echo "----------------------------"
 }
 
+# Função para imprimir informações de conexão
+print_connection_info() {
+  # Chama a função calculate_average_speeds
+  calculate_average_speeds "$sess_duration" "$data_transferred" "$data_transferred_rx" "$data_transferred_tx"
+
+  echo "---- Conexão ---------------"
+  echo "Conexão: $connection_text."
+  echo "Tipo de Conexão: $current_ps_service_type."
+  echo "Operadora: $register_network_display."
+  echo "PING: $(verificar_conexao)."
+  echo "GW: $gateway."
+  echo "LI: $local_ip."
+  echo "GW: $cg."
+  echo "IP: $public_ip."
+  echo "-------- Sessão -----------"
+  echo "Duração: $(format_duration "$sess_duration")."
+  echo "Início: $(format_datetime "$sess_start_time")."
+  echo "Dados total: $(format_bytes "$data_transferred")."
+  echo "Download total: $(format_bytes "$data_transferred_rx")."
+  echo "Upload total: $(format_bytes "$data_transferred_tx")."
+  echo "FULL: $average_speed_formatted/s. $average_speed_mbps."
+  echo "UP: $average_download_speed_formatted/s. $average_download_speed_mbps."
+  echo "Down: $average_upload_speed_formatted/s. $average_upload_speed_mbps."
+  echo "----------------------------"
+}
+
 # Função para imprimir informações da operadora
 print_operator_info() {
   echo "------- Torre -------------"
@@ -201,6 +228,18 @@ print_operator_info() {
   print_sinr_info
   print_qualidade_sinal
   echo "----------------------------"
+}
+
+verificar_conexao() {
+  # Executa o comando ping com os parâmetros desejados
+  ping -c 1 -W 1 8.8.8.8 > /dev/null 2>&1
+
+  # Verifica o status de saída do comando ping
+  if [ $? -eq 0 ]; then
+    echo "Conectado"
+  else
+    echo -e "Sem internet\a"
+  fi
 }
 
 print_band_info() {
@@ -275,7 +314,6 @@ print_band_info() {
   fi
 }
 
-
 print_umts_band_info() {
   if [ -n "$cur_umts_band" ]; then
     case "$cur_umts_band" in
@@ -309,25 +347,17 @@ print_umts_band_info() {
   fi
 }
 
-
 print_bars_info() {
-  if [ -z "$bars" ]; then
-    echo "Barras: Valor nulo."
-  elif [ "$bars" -eq 0 ]; then
-    echo "Barras: Sem sinal."
-  elif [ "$bars" -eq 1 ]; then
-    echo "Barras: $bars (sinal muito fraco)."
-  elif [ "$bars" -eq 2 ]; then
-    echo "Barras: $bars (sinal fraco)."
-  elif [ "$bars" -eq 3 ]; then
-    echo "Barras: $bars (sinal moderado)."
-  elif [ "$bars" -eq 4 ]; then
-    echo "Barras: $bars (sinal bom)."
-  elif [ "$bars" -eq 5 ]; then
-    echo "Barras: $bars (sinal excelente)."
-  else
-    echo "Barras: Valor inválido."
-  fi
+  case "$bars" in
+    ("") echo "Barras: Valor nulo." ;;
+    (0) echo "Barras: Sem sinal." ;;
+    (1) echo "Barras: $bars (sinal muito fraco)." ;;
+    (2) echo "Barras: $bars (sinal fraco)." ;;
+    (3) echo "Barras: $bars (sinal moderado)." ;;
+    (4) echo "Barras: $bars (sinal bom)." ;;
+    (5) echo "Barras: $bars (sinal excelente)." ;;
+    (*) echo "Barras: Valor inválido." ;;
+  esac
 }
 
 print_rsrp_info() {
@@ -371,23 +401,6 @@ print_sinr_info() {
     echo "SINR: $sinr dB (sinal fraco)."
   fi
 }
-
-
-# print_rsrp_info() {
-  # if [ "$rsrp" -gt -65 ]; then
-    # echo "RSRP: $rsrp dBm (sinal excelente)."
-  # elif [ "$rsrp" -gt -75 ]; then
-    # echo "RSRP: $rsrp dBm (sinal bom)."
-  # elif [ "$rsrp" -gt -85 ]; then
-    # echo "RSRP: $rsrp dBm (sinal médio)."
-  # elif [ "$rsrp" -gt -95 ]; then
-    # echo "RSRP: $rsrp dBm (sinal fraco)."
-  # else
-    # echo "RSRP: $rsrp dBm (sem sinal)."
-  # fi
-# }
-
-
 # Função para calcular as velocidades médias
 calculate_average_speeds() {
   local duration="$1"
@@ -423,30 +436,6 @@ calculate_average_speeds() {
   fi
 }
 
-# Função para imprimir informações de conexão
-print_connection_info() {
-  # Chama a função calculate_average_speeds
-  calculate_average_speeds "$sess_duration" "$data_transferred" "$data_transferred_rx" "$data_transferred_tx"
-
-  echo "---- Conexão ---------------"
-  echo "Conexão: $connection_text."
-  echo "Tipo de Conexão: $current_ps_service_type."
-  echo "Operadora: $register_network_display."
-  echo "GW: $gateway."
-  echo "LI: $local_ip."
-  echo "GW: $cg."
-  echo "IP: $public_ip."
-  echo "-------- Sessão -----------"
-  echo "Duração: $(format_duration "$sess_duration")."
-  echo "Início: $(format_datetime "$sess_start_time")."
-  echo "Dados total: $(format_bytes "$data_transferred")."
-  echo "Download total: $(format_bytes "$data_transferred_rx")."
-  echo "Upload total: $(format_bytes "$data_transferred_tx")."
-  echo "FULL: $average_speed_formatted/s. $average_speed_mbps."
-  echo "UP: $average_download_speed_formatted/s. $average_download_speed_mbps."
-  echo "Down: $average_upload_speed_formatted/s. $average_upload_speed_mbps."
-  echo "----------------------------"
-}
 
 # Função para imprimir informações de velocidade de conexão
 print_speed_info() {
@@ -530,7 +519,6 @@ extract_info() {
   data_transferred_rx=${data_transferred_rx:-null}
   data_transferred_tx=${data_transferred_tx:-null}
 }
-
 
 map_mnc_to_operadora() {
   case "$1" in
@@ -666,6 +654,12 @@ while true; do
   # Define prev_data e prev_time para a próxima iteração
   prev_data="$json"
   prev_time="$curr_time"
+  
+  # Verifica se o novo valor de $cg é diferente do valor anterior
+  if [ "$cg" != "$prev_cg" ]; then
+    # Chama a função para obter o IP público
+    public_ip=$(get_public_ip)
+  fi
 
   # Aguarda o intervalo especificado antes de atualizar as informações
   sleep $interval
