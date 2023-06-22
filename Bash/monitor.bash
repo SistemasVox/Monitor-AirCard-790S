@@ -156,10 +156,8 @@ function get_gateway() {
 # Função para obter o IP público
 function get_public_ip() {
   public_ip=$(curl -s https://api.ipify.org)
-
   if [ -n "$public_ip" ]; then
     echo "$public_ip"
-	prev_cg="$cg"
   else
     echo "0.0.0.0"
   fi
@@ -642,8 +640,10 @@ while true; do
   json=$(fetch_data)
   request_succeeded=$?
 
-  # Se a solicitação foi bem-sucedida, mantém o intervalo original e processa os dados
+  # Debug: Exibe o valor de request_succeeded
   echo "request_succeeded value is: $request_succeeded" >&2
+
+  # Se a solicitação foi bem-sucedida, mantém o intervalo original e processa os dados
   if [ $request_succeeded -eq 0 ]; then
     interval=5
 
@@ -655,31 +655,36 @@ while true; do
     print_device_info
     print_battery_info
     print_operator_info
-	if [ "$connection_status" != "Disconnected" ]; then
-		echo "Connection status: $connection_status"
-		print_connection_info
-	fi
+
+    # Se não estiver desconectado, exibe o status da conexão e a informação da conexão
+    if [ "$connection_status" != "Disconnected" ]; then
+      echo "Connection status: $connection_status"
+      print_connection_info
+    fi
 
     # Calcula e imprime as velocidades, se prev_data e prev_time estão definidos
     if [[ -n "$prev_data" && -n "$prev_time" && "$connection_status" != "Disconnected" ]]; then
       calculate_and_format_speeds "$curr_time" "$prev_time" "$json" "$prev_data"
-      # Imprime as velocidades formatadas
       print_speed_info
     fi
 
     # Define prev_data e prev_time para a próxima iteração
     prev_data="$json"
     prev_time="$curr_time"
-  
-    # Verifica se o novo valor de $cg é diferente do valor anterior
+
+    # Verifica se o novo valor de $cg é diferente do valor anterior e atualiza o IP público, se necessário
     if [ "$cg" != "$prev_cg" ]; then
-      # Chama a função para obter o IP público
+      echo "Consultando novo IP público." >&2
       public_ip=$(get_public_ip)
     fi
+
+    # Atualiza o valor de prev_cg para a próxima iteração
+    prev_cg="$cg"
+
   else
     # Se a solicitação falhou, redefine o intervalo para 1 segundos e exibe uma mensagem de erro
     interval=1
-	clear
+    clear
     echo "A solicitação falhou. Tentando novamente em 1 segundos..."
   fi
 
