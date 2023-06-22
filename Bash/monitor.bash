@@ -155,18 +155,18 @@ function get_gateway() {
 
 # Função para obter o IP público
 function get_public_ip() {
-  public_ip=$(curl -s https://api.ipify.org)
+  public_ip=$(curl -sf -m 2 -L https://api.ipify.org https://ipecho.net/plain https://checkip.amazonaws.com https://icanhazip.com)
   if [ -n "$public_ip" ]; then
     echo "$public_ip"
   else
-    echo "0.0.0.0"
+    echo "Desconhecido"
   fi
 }
 
 # Obtendo informações de IP
 local_ip=$(get_local_ip)
 gateway=$(get_gateway)
-public_ip=$(get_public_ip)
+public_ip=null
 
 # Função para imprimir informações do dispositivo
 print_device_info() {
@@ -673,14 +673,12 @@ while true; do
     prev_time="$curr_time"
 
     # Verifica se o novo valor de $cg é diferente do valor anterior e atualiza o IP público, se necessário
-    if [ "$cg" != "$prev_cg" ]; then
+    if [[ "$cg" != "$prev_cg" && "$connection_status" != "Disconnected" ]]; then
       echo "Consultando novo IP público." >&2
       public_ip=$(get_public_ip)
     fi
-
-    # Atualiza o valor de prev_cg para a próxima iteração
+	# Atualiza o valor de prev_cg para a próxima iteração
     prev_cg="$cg"
-
   else
     # Se a solicitação falhou, redefine o intervalo para 1 segundos e exibe uma mensagem de erro
     interval=1
