@@ -46,18 +46,24 @@ format_bytes() {
   fi
 }
 
-
 # Função para fazer requisições GET
 fetch_data() {
   random_x=$((10000 + RANDOM % 99999))
   url="http://192.168.1.1/api/model.json?internalapi=1&x=$random_x"
-  response=$(curl -s -L "$url")
-  # Substituir caracteres de controle por espaços em branco
-  clean_response=$(echo "$response" | tr -d '\n' | tr -c '[:print:]\n' ' ')
-  # Formatar JSON com jq
-  formatted_response=$(echo "$clean_response" | jq '.')
-  # Imprimir saída formatada
-  echo "$formatted_response"
+  # Definir um tempo limite de 2 segundos para a solicitação
+  response=$(curl -sf -m 2 -L "$url")
+  curl_exit_status=$?
+
+  if [ $curl_exit_status -eq 0 ] && [ -n "$response" ]; then
+    clean_response=$(echo "$response" | tr -d '\n' | tr -c '[:print:]\n' ' ')
+    formatted_response=$(echo "$clean_response" | jq '.')
+    echo "$formatted_response"
+	return 0
+  else
+    echo "Request timed out or response is empty" >&2
+    # Marcar a solicitação como falha
+    return 1
+  fi
 }
 
 # Função para formatar bytes
@@ -463,6 +469,7 @@ extract_info() {
   battery_state=$(echo "$json" | jq -r '.power.batteryState // null' 2>/dev/null)
 
   connection_text=$(echo "$json" | jq -r '.wwan.connectionText' 2>/dev/null)
+  connection_status=$(echo "$json" | jq -r '.wwan.connection' 2>/dev/null)
   current_ps_service_type=$(echo "$json" | jq -r '.wwan.currentPSserviceType' 2>/dev/null)
   cur_band=$(echo "$json" | jq -r '.wwanadv.curBand' 2>/dev/null)
   bars=$(echo "$json" | jq -r '.wwan.signalStrength.bars // null' 2>/dev/null)
@@ -633,38 +640,52 @@ interval=5
 while true; do
   # Coleta os dados em formato JSON
   json=$(fetch_data)
+  request_succeeded=$?
 
-  # Extrai as informações relevantes usando a função extract_info
-  extract_info "$json"
+  # Se a solicitação foi bem-sucedida, mantém o intervalo original e processa os dados
+  echo "request_succeeded value is: $request_succeeded" >&2
+  if [ $request_succeeded -eq 0 ]; then
+    interval=5
 
-  # Exibe as informações formatadas
-  clear
-  print_device_info
-  print_battery_info
-  print_operator_info
-  print_connection_info
+    # Extrai as informações relevantes usando a função extract_info
+    extract_info "$json"
 
-  # Calcula e imprime as velocidades, se prev_data e prev_time estão definidos
-  if [[ -n "$prev_data" && -n "$prev_time" ]]; then
-    calculate_and_format_speeds "$curr_time" "$prev_time" "$json" "$prev_data"
-    # Imprime as velocidades formatadas
-    print_speed_info
-  fi
+    # Exibe as informações formatadas
+    clear
+    print_device_info
+    print_battery_info
+    print_operator_info
+	if [ "$connection_status" != "Disconnected" ]; then
+		echo "Connection status: $connection_status"
+		print_connection_info
+	fi
 
-  # Define prev_data e prev_time para a próxima iteração
-  prev_data="$json"
-  prev_time="$curr_time"
+    # Calcula e imprime as velocidades, se prev_data e prev_time estão definidos
+    if [[ -n "$prev_data" && -n "$prev_time" && "$connection_status" != "Disconnected" ]]; then
+      calculate_and_format_speeds "$curr_time" "$prev_time" "$json" "$prev_data"
+      # Imprime as velocidades formatadas
+      print_speed_info
+    fi
+
+    # Define prev_data e prev_time para a próxima iteração
+    prev_data="$json"
+    prev_time="$curr_time"
   
-  # Verifica se o novo valor de $cg é diferente do valor anterior
-  if [ "$cg" != "$prev_cg" ]; then
-    # Chama a função para obter o IP público
-    public_ip=$(get_public_ip)
+    # Verifica se o novo valor de $cg é diferente do valor anterior
+    if [ "$cg" != "$prev_cg" ]; then
+      # Chama a função para obter o IP público
+      public_ip=$(get_public_ip)
+    fi
+  else
+    # Se a solicitação falhou, redefine o intervalo para 1 segundos e exibe uma mensagem de erro
+    interval=1
+	clear
+    echo "A solicitação falhou. Tentando novamente em 1 segundos..."
   fi
 
   # Aguarda o intervalo especificado antes de atualizar as informações
   sleep $interval
 done
-
 
 # operadora.txt
 # 02:TIM
