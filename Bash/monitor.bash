@@ -155,12 +155,17 @@ function get_gateway() {
 
 # Função para obter o IP público
 function get_public_ip() {
-  public_ip=$(curl -sf -m 2 -L https://api.ipify.org https://ipecho.net/plain https://checkip.amazonaws.com https://icanhazip.com)
-  if [ -n "$public_ip" ]; then
-    echo "$public_ip"
-  else
-    echo "Desconhecido"
-  fi
+  urls=("https://api.ipify.org" "https://ipecho.net/plain" "https://checkip.amazonaws.com" "https://icanhazip.com")
+  
+  for url in "${urls[@]}"; do
+    public_ip=$(curl -sf -m 2 -L "$url")
+    if [ -n "$public_ip" ]; then
+      echo "$public_ip"
+      return
+    fi
+  done
+
+  echo "Desconhecido"
 }
 
 # Obtendo informações de IP
